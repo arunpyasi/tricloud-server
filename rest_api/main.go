@@ -15,10 +15,7 @@ func MiddlewareJson(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-func final(w http.ResponseWriter, r *http.Request) {
-	log.Println("Executing finalHandler")
-	w.Write([]byte("OK"))
-}
+
 
 func main() {
 	fmt.Println("Welcome to TriCloud REST_API")
