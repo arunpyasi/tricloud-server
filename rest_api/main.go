@@ -9,6 +9,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func MiddlewareJson(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		next.ServeHTTP(w, r)
+	})
+}
+func final(w http.ResponseWriter, r *http.Request) {
+	log.Println("Executing finalHandler")
+	w.Write([]byte("OK"))
+}
+
 func main() {
 	fmt.Println("Welcome to TriCloud REST_API")
 	r := mux.NewRouter() // Here, r is router
@@ -25,7 +36,7 @@ func main() {
 	r.HandleFunc("/agent/{id}", CreateAgent).Methods("POST")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
-
+	r.Use(MiddlewareJson)
 	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving router
 }
 
@@ -44,8 +55,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 func DeleteUser(w http.ResponseWriter, r *http.Request) {}
 
 func GetAgents(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(agent)
+	j, _ := json.Marshal(agent)
+	w.Write(j)
 }
 
 func GetAgent(w http.ResponseWriter, r *http.Request)    {}
