@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/indrenicloud/tricloud-server/rest_api/database"
 )
 
 func MiddlewareJson(next http.Handler) http.Handler {
@@ -16,11 +16,9 @@ func MiddlewareJson(next http.Handler) http.Handler {
 	})
 }
 
-
 func main() {
 	fmt.Println("Welcome to TriCloud REST_API")
 	r := mux.NewRouter() // Here, r is router
-	agent = append(agent, Agent{ID: "1", Name: "Lenovo-B50", OS: "Ubuntu/Linux"})
 
 	r.HandleFunc("/users", GetUsers).Methods("GET")
 	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
@@ -37,26 +35,27 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving router
 }
 
-type Agent struct {
-	ID   string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	OS   string `json:"os,omitempty"`
+func GetUsers(w http.ResponseWriter, r *http.Request) {
+	db := database.OpenRead()
+	defer db.Close()
+	users, err := database.GetAllUsers(db)
+	if err != nil {
+		fmt.Printf("error: %s", err)
+	}
+	fmt.Println(users)
+
 }
-
-var agent []Agent
-
-func GetUsers(w http.ResponseWriter, r *http.Request)   {}
 func GetUser(w http.ResponseWriter, r *http.Request)    {}
 func CreateUser(w http.ResponseWriter, r *http.Request) {}
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 func DeleteUser(w http.ResponseWriter, r *http.Request) {}
 
 func GetAgents(w http.ResponseWriter, r *http.Request) {
-	j, _ := json.Marshal(agent)
-	w.Write(j)
+
 }
 
-func GetAgent(w http.ResponseWriter, r *http.Request)    {}
-func CreateAgent(w http.ResponseWriter, r *http.Request) {}
+func GetAgent(w http.ResponseWriter, r *http.Request) {}
+func CreateAgent(w http.ResponseWriter, r *http.Request) {
+}
 func UpdateAgent(w http.ResponseWriter, r *http.Request) {}
 func DeleteAgent(w http.ResponseWriter, r *http.Request) {}
