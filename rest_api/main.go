@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -32,17 +33,16 @@ func main() {
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
 	r.Use(MiddlewareJson)
-	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving router
+	defer database.Conn.Close()
+	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	db := database.OpenRead()
-	defer db.Close()
-	users, err := database.GetAllUsers(db)
+	users, err := database.GetAllUsers()
 	if err != nil {
 		fmt.Printf("error: %s", err)
 	}
-	fmt.Println(users)
+	w.Write(users)
 
 }
 func GetUser(w http.ResponseWriter, r *http.Request)    {}

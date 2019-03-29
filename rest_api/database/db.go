@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 
 	bolt "go.etcd.io/bbolt"
@@ -11,8 +12,8 @@ type User struct {
 	Username string
 }
 
-func AddUsers(db *bolt.DB, id string, username string) error {
-	err := db.Update(func(tx *bolt.Tx) error {
+func AddUsers(id string, username string) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
 		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
 		if err != nil {
 			return fmt.Errorf("Failed to create bucket: %v", err)
@@ -26,9 +27,9 @@ func AddUsers(db *bolt.DB, id string, username string) error {
 	return err
 }
 
-func GetAllUsers(db *bolt.DB) ([]User, error) {
+func GetAllUsers() ([]byte, error) {
 	var users []User
-	err := db.View(func(tx *bolt.Tx) error {
+	err := Conn.View(func(tx *bolt.Tx) error {
 		x := tx.Bucket([]byte("users"))
 		c := x.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -39,5 +40,7 @@ func GetAllUsers(db *bolt.DB) ([]User, error) {
 		}
 		return nil
 	})
-	return users, err
+	user_json, _ := json.Marshal(users)
+
+	return user_json, err
 }
