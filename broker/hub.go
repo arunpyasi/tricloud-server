@@ -2,16 +2,17 @@ package broker
 
 import (
 	"context"
+	"encoding/json"
 
-	"github.com/google/uuid"
+	t "github.com/indrenicloud/tricloud-server/core"
 )
 
 type Hub struct {
-	UserConns  map[uuid.UUID]*NodeConn
-	AgentConns map[uuid.UUID]*NodeConn
+	UserConns  map[uid]*NodeConn // TODO lock if ..
+	AgentConns map[uid]*NodeConn
 
-	UserDevices map[string]uuid.UUID
-	UserAgents  map[string]uuid.UUID
+	//UserDevices map[string]uid
+	UserAgents map[string]uid // agentkey (not deploy key) with one most current key
 
 	AddConnection    chan *NodeConn
 	RemoveConnection chan *NodeConn
@@ -20,6 +21,8 @@ type Hub struct {
 
 	Ctx       context.Context
 	CtxCancel context.CancelFunc
+
+	idgenerator *generator
 }
 
 func NewHub() *Hub {
@@ -27,17 +30,18 @@ func NewHub() *Hub {
 	ctx, ctxcancel := context.WithCancel(context.Background())
 
 	return &Hub{
-		UserConns:  make(map[uuid.UUID]*NodeConn),
-		AgentConns: make(map[uuid.UUID]*NodeConn),
+		UserConns:  make(map[uid]*NodeConn),
+		AgentConns: make(map[uid]*NodeConn),
 
-		UserDevices: make(map[string]uuid.UUID),
-		UserAgents:  make(map[string]uuid.UUID),
+		//UserDevices: make(map[string]uid),
+		UserAgents: make(map[string]uid),
 
 		AddConnection:    make(chan *NodeConn),
 		RemoveConnection: make(chan *NodeConn),
 		PacketChan:       make(chan *packet),
 		Ctx:              ctx,
 		CtxCancel:        ctxcancel,
+		idgenerator:      newGenerator(),
 	}
 }
 
@@ -48,13 +52,22 @@ func (h *Hub) Run() {
 		case _ = <-h.Ctx.Done():
 			// cleanup & exit here
 		case node := <-h.AddConnection:
-			//pass
+			switch node.Type {
+			case AgentType:
+				h.AgentConns[node.Connectionid] = node
+				h.UserAgents[node.Identifier] = node.Connectionid
+			case UserType:
+				h.UserConns[node.Connectionid] = node
+			}
 		case node := <-h.RemoveConnection:
 			//pass
 		case receivedPacket := <-h.PacketChan:
-
-			go func() {
-				// packet routing
+			//process
+			var msg t.MessageFormat
+			json.Unmarshal(receivedPacket.Data, &msg)
+			conn, ok := h.UserConns[uid(msg.Receiver)]
+			if ok {
+				conn.send <- receivedPacket.Data
 			}
 
 		}

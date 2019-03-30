@@ -10,8 +10,8 @@ const (
 )
 
 type packet struct {
-	from *NodeConn
-	data []byte
+	Conn *NodeConn
+	Data []byte
 }
 
 var upgrader = websocket.Upgrader{
