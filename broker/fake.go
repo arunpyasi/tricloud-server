@@ -6,13 +6,19 @@ import (
 )
 
 // there are mostly stub function which will be removed later
-
+// for db
 func getUserKeys(user string) []string {
 	return nil
 }
 
+// for db
 func getParent(key string) (string, error) {
 	return "", nil
+}
+
+// for session/cookie manager
+func getUserFromCookie(user string) string {
+	return ""
 }
 
 // just small experiment, temp probably

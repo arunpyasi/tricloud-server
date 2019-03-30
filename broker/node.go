@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"log"
 
 	"github.com/gorilla/websocket"
 )
@@ -11,9 +12,9 @@ type NodeConn struct {
 	Connectionid uid
 	Identifier   string   // key for agent userid for user
 	Type         NodeType // UserType or AgentType
-	readerCtx    *context.Context
+	readerCtx    context.Context
 	CloseReader  context.CancelFunc
-	writerCtx    *context.Context
+	writerCtx    context.Context
 	CloseWriter  context.CancelFunc
 	MyHub        *Hub
 	Running      bool
@@ -23,13 +24,63 @@ type NodeConn struct {
 }
 
 func NewNodeConn(identifier string, t NodeType, conn *websocket.Conn, h *Hub) *NodeConn {
-	return nil
+
+	rctx, rctxCancelFunc := context.WithCancel(h.Ctx)
+	wctx, wctxCancelFunc := context.WithCancel(h.Ctx)
+
+	return &NodeConn{
+		Connectionid: h.IDGenerator.generate(),
+		Identifier:   identifier,
+		Type:         t,
+		readerCtx:    rctx,
+		CloseReader:  rctxCancelFunc,
+		writerCtx:    wctx,
+		CloseWriter:  wctxCancelFunc,
+		MyHub:        h,
+		Running:      true,
+		conn:         conn,
+		send:         make(chan []byte),
+	}
 }
 
 func (n *NodeConn) Reader() {
 
+	for {
+		_, data, err := n.conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			// todo check the type of error then continue/return depending on it
+			return
+		}
+		sendPacket := &packet{
+			Conn: n,
+			Data: data,
+		}
+
+		n.MyHub.PacketChan <- sendPacket
+
+		select {
+		case _ = <-n.readerCtx.Done():
+			return
+		default:
+		}
+
+	}
+
 }
 
 func (n *NodeConn) Writer() {
+	defer n.conn.Close()
+
+	select {
+	case _ = <-n.writerCtx.Done():
+		return
+	case out := <-n.send:
+		err := n.conn.WriteMessage(websocket.TextMessage, out)
+
+		if err != nil {
+			return
+		}
+	}
 
 }

@@ -32,12 +32,11 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
-		w.Write([]byte("error"))
+		log.Println("could not upgrade to wesocket:", err)
 		return
 	}
 
-	key, ok := r.Form["key"]
+	key, ok := r.Form["key"] // todo or cookies
 	if !ok {
 		log.Println("does not have key")
 		return
@@ -46,8 +45,8 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 	parent, err := getParent(key[0]) // TODO auth
 
 	if err != nil {
-		return
 		log.Println(err)
+		return
 	}
 
 	hub := b.GetHub(parent)
@@ -61,4 +60,26 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	//return conn id (uuid)
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("could not upgrade to wesocket:", err)
+		return
+	}
+
+	c, err := r.Cookie("wscookie")
+	if err != nil {
+		log.Println("nocookie! but i am hungry", err)
+		return
+	}
+	user := getUserFromCookie(c.Value)
+
+	hub := b.GetHub(user)
+	node := NewNodeConn(user, UserType, conn, hub)
+
+	hub.AddConnection <- node
+
+}
+
+func (b *Broker) GetAgents(user string) []string {
+	return nil
 }

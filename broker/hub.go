@@ -22,7 +22,7 @@ type Hub struct {
 	Ctx       context.Context
 	CtxCancel context.CancelFunc
 
-	idgenerator *generator
+	IDGenerator *generator
 }
 
 func NewHub() *Hub {
@@ -41,7 +41,7 @@ func NewHub() *Hub {
 		PacketChan:       make(chan *packet),
 		Ctx:              ctx,
 		CtxCancel:        ctxcancel,
-		idgenerator:      newGenerator(),
+		IDGenerator:      newGenerator(),
 	}
 }
 
@@ -50,16 +50,23 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case _ = <-h.Ctx.Done():
-			// cleanup & exit here
+			// cleanup may be
+			h.CtxCancel()
+			return
 		case node := <-h.AddConnection:
 			switch node.Type {
 			case AgentType:
+				//todo connection of this identifier may be present
+				// do we remove/close that
 				h.AgentConns[node.Connectionid] = node
 				h.UserAgents[node.Identifier] = node.Connectionid
 			case UserType:
 				h.UserConns[node.Connectionid] = node
 			}
-		case node := <-h.RemoveConnection:
+			go node.Reader()
+			go node.Writer()
+
+		case _ = <-h.RemoveConnection:
 			//pass
 		case receivedPacket := <-h.PacketChan:
 			//process
