@@ -11,7 +11,6 @@ type Hub struct {
 	UserConns  map[uid]*NodeConn // TODO lock if ..
 	AgentConns map[uid]*NodeConn
 
-	//UserDevices map[string]uid
 	UserAgents map[string]uid // agentkey (not deploy key) with one most current key
 
 	AddConnection    chan *NodeConn
@@ -33,7 +32,6 @@ func NewHub() *Hub {
 		UserConns:  make(map[uid]*NodeConn),
 		AgentConns: make(map[uid]*NodeConn),
 
-		//UserDevices: make(map[string]uid),
 		UserAgents: make(map[string]uid),
 
 		AddConnection:    make(chan *NodeConn),
