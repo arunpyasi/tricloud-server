@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 
 	"net/http"
@@ -22,14 +25,14 @@ func main() {
 	r := mux.NewRouter() // Here, r is router
 
 	r.HandleFunc("/users", GetUsers).Methods("GET")
+	r.HandleFunc("/users", CreateUser).Methods("POST")
 	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
-	r.HandleFunc("/users/{id}", CreateUser).Methods("POST")
 	r.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
+	r.HandleFunc("/agent", CreateAgent).Methods("POST")
 	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
-	r.HandleFunc("/agent/{id}", CreateAgent).Methods("POST")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
 	r.Use(MiddlewareJson)
@@ -45,8 +48,18 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(users)
 
 }
-func GetUser(w http.ResponseWriter, r *http.Request)    {}
-func CreateUser(w http.ResponseWriter, r *http.Request) {}
+func GetUser(w http.ResponseWriter, r *http.Request) {}
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	var user database.User
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &user)
+	database.CreateUser(user)
+
+}
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
 func DeleteUser(w http.ResponseWriter, r *http.Request) {}
 
