@@ -10,9 +10,10 @@ import (
 type User struct {
 	ID       string `json:"id"`
 	UserName string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 	FullName string `json:"fullname,omitempty"`
 	Email    string `json:"email,omitempty"`
-	Agent    *Agent `json:"agent,omitempty"`
+	Agent    *Agent `json:"agents,omitempty"`
 }
 
 type Agent struct {
@@ -56,4 +57,16 @@ func GetAllUsers() ([]byte, error) {
 	user_json, _ := json.Marshal(users)
 
 	return user_json, err
+}
+
+func DeleteUser(user_id string) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		bk.Delete([]byte(user_id))
+		return err
+	})
+	return err
 }

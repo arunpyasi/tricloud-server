@@ -58,10 +58,19 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	json.Unmarshal(body, &user)
 	database.CreateUser(user)
+	updated_users, _ := database.GetAllUsers()
+	w.Write(updated_users)
 
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
-func DeleteUser(w http.ResponseWriter, r *http.Request) {}
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	database.DeleteUser(ID)
+	updated_users, _ := database.GetAllUsers()
+	w.Write(updated_users)
+
+}
 
 func GetAgents(w http.ResponseWriter, r *http.Request) {
 
