@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	bolt "go.etcd.io/bbolt"
@@ -13,7 +14,7 @@ type User struct {
 	Password string `json:"password,omitempty"`
 	FullName string `json:"fullname,omitempty"`
 	Email    string `json:"email,omitempty"`
-	Status   string `json:"status,omitempty"`
+	Active   string `json:"active,omitempty"`
 	Agent    *Agent `json:"agents,omitempty"`
 }
 
@@ -45,19 +46,20 @@ func CreateUser(user_data User) error {
 func GetUser(id string) ([]byte, error) {
 	var user_details []byte
 	err := Conn.View(func(tx *bolt.Tx) error {
+		var err error
 		x := tx.Bucket([]byte("users"))
 		user_details = x.Get([]byte(id))
 		if user_details == nil {
-			user_details = []byte(`{"msg":"No user with ID ` + id + `"}`)
+			err = errors.New("No user with ID " + id + " found")
 		}
-		return nil
+		return err
 	})
 	return user_details, err
 }
 
 func GetAllUsers() ([]byte, error) {
 	var users []User
-	err := Conn.View(func(tx *bolt.Tx) error {
+	Conn.View(func(tx *bolt.Tx) error {
 		x := tx.Bucket([]byte("users"))
 		c := x.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -67,9 +69,10 @@ func GetAllUsers() ([]byte, error) {
 		}
 		return nil
 	})
-	user_json, _ := json.Marshal(users)
-
-	return user_json, err
+	m := make(map[string]interface{})
+	m["data"] = users
+	json_data, err := json.Marshal(m)
+	return json_data, err
 }
 
 func DeleteUser(user_id string) error {

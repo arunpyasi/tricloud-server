@@ -40,22 +40,37 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving
 }
 
+func GenerateResponse(data []byte, err error) []byte {
+	var response []byte
+
+	fmt.Print(string(data))
+	fmt.Print(err)
+	if data != nil || err == nil {
+		m := make(map[string]interface{})
+		json.Unmarshal(data, &m)
+		m["status"] = "ok"
+		response, _ = json.Marshal(m)
+	} else {
+		response = []byte(`{"msg":"` + err.Error() + `","status":"failed"}`)
+	}
+	return response
+}
+
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := database.GetAllUsers()
 	if err != nil {
 		fmt.Printf("error: %s", err)
 	}
-	w.Write(users)
+	resp := GenerateResponse(users, err)
+	w.Write(resp)
 
 }
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ID := vars["id"]
 	user, err := database.GetUser(ID)
-	if err != nil {
-		fmt.Printf("error: %s", err)
-	}
-	w.Write(user)
+	resp := GenerateResponse(user, err)
+	w.Write(resp)
 }
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user database.User
@@ -66,26 +81,25 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	json.Unmarshal(body, &user)
 	database.CreateUser(user)
-	updated_users, _ := database.GetAllUsers()
-	w.Write(updated_users)
+	updated_users, err := database.GetAllUsers()
+	resp := GenerateResponse(updated_users, err)
+	w.Write(resp)
 
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
+
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ID := vars["id"]
 	database.DeleteUser(ID)
-	updated_users, _ := database.GetAllUsers()
-	w.Write(updated_users)
+	updated_users, err := database.GetAllUsers()
+	resp := GenerateResponse(updated_users, err)
+	w.Write(resp)
 
 }
 
-func GetAgents(w http.ResponseWriter, r *http.Request) {
-
-}
-
-func GetAgent(w http.ResponseWriter, r *http.Request) {}
-func CreateAgent(w http.ResponseWriter, r *http.Request) {
-}
+func GetAgents(w http.ResponseWriter, r *http.Request)   {}
+func GetAgent(w http.ResponseWriter, r *http.Request)    {}
+func CreateAgent(w http.ResponseWriter, r *http.Request) {}
 func UpdateAgent(w http.ResponseWriter, r *http.Request) {}
 func DeleteAgent(w http.ResponseWriter, r *http.Request) {}
