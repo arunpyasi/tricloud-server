@@ -4,17 +4,25 @@ import (
 	"log"
 	"net/http"
 	"sync"
+
 )
 
 type Broker struct {
-	bLock sync.Mutex
+	BLock sync.Mutex
 	Hubs  map[string]*Hub
+}
+
+func NewBroker() *Broker {
+	return &Broker{
+		BLock: sync.Mutex{},
+		Hubs:  make(map[string]*Hub),
+	}
 }
 
 func (b *Broker) GetHub(user string) *Hub {
 
-	b.bLock.Lock()
-	defer b.bLock.Unlock()
+	b.BLock.Lock()
+	defer b.BLock.Unlock()
 	hub, ok := b.Hubs[user]
 	if ok {
 		return hub
