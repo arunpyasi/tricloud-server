@@ -48,7 +48,15 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Write(users)
 
 }
-func GetUser(w http.ResponseWriter, r *http.Request) {}
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	user, err := database.GetUser(ID)
+	if err != nil {
+		fmt.Printf("error: %s", err)
+	}
+	w.Write(user)
+}
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user database.User
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))

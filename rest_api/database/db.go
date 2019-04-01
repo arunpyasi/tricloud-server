@@ -13,6 +13,7 @@ type User struct {
 	Password string `json:"password,omitempty"`
 	FullName string `json:"fullname,omitempty"`
 	Email    string `json:"email,omitempty"`
+	Status   string `json:"status,omitempty"`
 	Agent    *Agent `json:"agents,omitempty"`
 }
 
@@ -40,6 +41,18 @@ func CreateUser(user_data User) error {
 		return err
 	})
 	return err
+}
+func GetUser(id string) ([]byte, error) {
+	var user_details []byte
+	err := Conn.View(func(tx *bolt.Tx) error {
+		x := tx.Bucket([]byte("users"))
+		user_details = x.Get([]byte(id))
+		if user_details == nil {
+			user_details = []byte(`{"msg":"No user with ID ` + id + `"}`)
+		}
+		return nil
+	})
+	return user_details, err
 }
 
 func GetAllUsers() ([]byte, error) {
