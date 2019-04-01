@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 
 	"net/http"
@@ -22,14 +25,14 @@ func main() {
 	r := mux.NewRouter() // Here, r is router
 
 	r.HandleFunc("/users", GetUsers).Methods("GET")
+	r.HandleFunc("/users", CreateUser).Methods("POST")
 	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
-	r.HandleFunc("/users/{id}", CreateUser).Methods("POST")
 	r.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
+	r.HandleFunc("/agent", CreateAgent).Methods("POST")
 	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
-	r.HandleFunc("/agent/{id}", CreateAgent).Methods("POST")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
 	r.Use(MiddlewareJson)
@@ -37,25 +40,66 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving
 }
 
+func GenerateResponse(data []byte, err error) []byte {
+	var response []byte
+
+	fmt.Print(string(data))
+	fmt.Print(err)
+	if data != nil || err == nil {
+		m := make(map[string]interface{})
+		json.Unmarshal(data, &m)
+		m["status"] = "ok"
+		response, _ = json.Marshal(m)
+	} else {
+		response = []byte(`{"msg":"` + err.Error() + `","status":"failed"}`)
+	}
+	return response
+}
+
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := database.GetAllUsers()
 	if err != nil {
 		fmt.Printf("error: %s", err)
 	}
-	w.Write(users)
+	resp := GenerateResponse(users, err)
+	w.Write(resp)
 
 }
-func GetUser(w http.ResponseWriter, r *http.Request)    {}
-func CreateUser(w http.ResponseWriter, r *http.Request) {}
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	user, err := database.GetUser(ID)
+	resp := GenerateResponse(user, err)
+	w.Write(resp)
+}
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	var user database.User
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &user)
+	database.CreateUser(user)
+	updated_users, err := database.GetAllUsers()
+	resp := GenerateResponse(updated_users, err)
+	w.Write(resp)
+
+}
 func UpdateUser(w http.ResponseWriter, r *http.Request) {}
-func DeleteUser(w http.ResponseWriter, r *http.Request) {}
 
-func GetAgents(w http.ResponseWriter, r *http.Request) {
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	database.DeleteUser(ID)
+	updated_users, err := database.GetAllUsers()
+	resp := GenerateResponse(updated_users, err)
+	w.Write(resp)
 
 }
 
-func GetAgent(w http.ResponseWriter, r *http.Request) {}
-func CreateAgent(w http.ResponseWriter, r *http.Request) {
-}
+func GetAgents(w http.ResponseWriter, r *http.Request)   {}
+func GetAgent(w http.ResponseWriter, r *http.Request)    {}
+func CreateAgent(w http.ResponseWriter, r *http.Request) {}
 func UpdateAgent(w http.ResponseWriter, r *http.Request) {}
 func DeleteAgent(w http.ResponseWriter, r *http.Request) {}
