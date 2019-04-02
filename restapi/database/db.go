@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -47,15 +46,21 @@ func CreateUser(user_data User) error {
 func GetUser(id string) ([]byte, error) {
 	var user_details []byte
 	err := Conn.View(func(tx *bolt.Tx) error {
-		var err error
-		x := tx.Bucket([]byte("users"))
+		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
+		if err != nil {
+			return err
+		}
+		x := bk
 		user_details = x.Get([]byte(id))
 		if user_details == nil {
 			err = errors.New("No user with ID " + id + " found")
 		}
 		return err
 	})
-	return user_details, err
+	m := make(map[string]interface{})
+	m["data"] = user_details
+	json_data, err := json.Marshal(m)
+	return json_data, err
 }
 
 func GetAllUsers() ([]byte, error) {
@@ -67,7 +72,6 @@ func GetAllUsers() ([]byte, error) {
 		}
 		x := bk
 		c := x.Cursor()
-		log.Println("Marker")
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			var data User
 			json.Unmarshal(v, &data)
