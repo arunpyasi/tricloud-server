@@ -4,31 +4,39 @@ import (
 	"net/http"
 
 	"github.com/indrenicloud/tricloud-server/broker"
+	"github.com/indrenicloud/tricloud-server/restapi"
 
 	"github.com/gorilla/mux"
 )
 
+var mBroker *broker.Broker
+
 func main() {
 
-	mBroker := broker.NewBroker()
+	mBroker = broker.NewBroker()
 
-	mainRouter := getRouter()
-	mainRouter.HandleFunc("/websocket", mBroker.ServeAgentWebsocket)
-	go func() {
-		r := http.NewServeMux()
-		r.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
-		r.HandleFunc("/websocket", mBroker.ServeAgentWebsocket)
-		http.ListenAndServe(":8081", r)
+	go listenAgentsConnection()
 
-	}()
+	r := mux.NewRouter()
+	restapi.RegisterAPI(r.PathPrefix("/api").Subrouter())
+	restapi.RegisterAuthHandlers(r.PathPrefix("/login").Subrouter())
+	//defer database.Close()
 
-	http.ListenAndServe(":8080", mainRouter)
+	r.HandleFunc("/", rootRoute)
+
+	r.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
+	r.HandleFunc("/websocket", mBroker.ServeUserWebsocket)
+	http.ListenAndServe(":8080", r)
 
 }
 
-// stub for rest api
-func getRouter() *mux.Router {
+func listenAgentsConnection() {
+	mainRouter := mux.NewRouter()
+	mainRouter.HandleFunc("/websocket", mBroker.ServeAgentWebsocket)
+	http.ListenAndServe(":8081", mainRouter)
 
-	r := mux.NewRouter()
-	return r
+}
+
+func rootRoute(h http.ResponseWriter, r *http.Request) {
+	http.ServeFile(h, r, "./public/index.html")
 }

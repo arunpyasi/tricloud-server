@@ -1,17 +1,21 @@
-package main
+package restapi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/indrenicloud/tricloud-server/rest_api/database"
+	"github.com/indrenicloud/tricloud-server/restapi/database"
 )
+
+// when using refelection to find type  using custom type avoids collision in contex.value
+//type key int
+//const UserType key = iota
 
 func MiddlewareJson(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -20,9 +24,23 @@ func MiddlewareJson(next http.Handler) http.Handler {
 	})
 }
 
-func main() {
+// MiddlewareSession checks the session for request and tags username to request context
+func MiddlewareSession(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		usr, err := database.GetUserFromSession(r)
+		if err != nil {
+			http.Error(w, "not authorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user", usr)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func RegisterAPI(r *mux.Router) {
 	fmt.Println("Welcome to TriCloud REST_API")
-	r := mux.NewRouter() // Here, r is router
 
 	r.HandleFunc("/users", GetUsers).Methods("GET")
 	r.HandleFunc("/users", CreateUser).Methods("POST")
@@ -35,9 +53,7 @@ func main() {
 	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
-	r.Use(MiddlewareJson)
-	defer database.Conn.Close()
-	log.Fatal(http.ListenAndServe(":8000", r)) //listening and serving
+	r.Use(MiddlewareSession, MiddlewareJson)
 }
 
 func GenerateResponse(data []byte, err error) []byte {

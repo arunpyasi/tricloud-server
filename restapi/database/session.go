@@ -32,7 +32,7 @@ func GetUserFromSession(r *http.Request) (string, error) {
 	return value, nil
 }
 
-func setUserSession(user string, w http.ResponseWriter, r *http.Request) error {
+func SetUserSession(user string, w http.ResponseWriter, r *http.Request) error {
 	session, err := store.Get(r, "session")
 	if err != nil {
 		return err

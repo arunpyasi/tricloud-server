@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -62,6 +63,7 @@ func GetAllUsers() ([]byte, error) {
 	Conn.View(func(tx *bolt.Tx) error {
 		x := tx.Bucket([]byte("users"))
 		c := x.Cursor()
+		log.Println("Marker")
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			var data User
 			json.Unmarshal(v, &data)
@@ -77,11 +79,8 @@ func GetAllUsers() ([]byte, error) {
 
 func DeleteUser(user_id string) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
-		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
-		}
-		bk.Delete([]byte(user_id))
+		bk := tx.Bucket([]byte("users"))
+		err := bk.Delete([]byte(user_id))
 		return err
 	})
 	return err

@@ -21,3 +21,7 @@ func openDB() *bolt.DB {
 	fmt.Print("opened db")
 	return db
 }
+
+func Close() {
+	log.Println(Conn.Close())
+}
