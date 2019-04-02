@@ -61,7 +61,11 @@ func GetUser(id string) ([]byte, error) {
 func GetAllUsers() ([]byte, error) {
 	var users []User
 	Conn.View(func(tx *bolt.Tx) error {
-		x := tx.Bucket([]byte("users"))
+		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		x := bk
 		c := x.Cursor()
 		log.Println("Marker")
 		for k, v := c.First(); k != nil; k, v = c.Next() {

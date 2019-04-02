@@ -5,6 +5,7 @@ import (
 
 	"github.com/indrenicloud/tricloud-server/broker"
 	"github.com/indrenicloud/tricloud-server/restapi"
+	"github.com/indrenicloud/tricloud-server/restapi/database"
 
 	"github.com/gorilla/mux"
 )
@@ -20,7 +21,7 @@ func main() {
 	r := mux.NewRouter()
 	restapi.RegisterAPI(r.PathPrefix("/api").Subrouter())
 	restapi.RegisterAuthHandlers(r.PathPrefix("/login").Subrouter())
-	//defer database.Close()
+	defer database.Close()
 
 	r.HandleFunc("/", rootRoute)
 

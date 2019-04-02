@@ -1,7 +1,6 @@
 package restapi
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,19 +24,19 @@ func MiddlewareJson(next http.Handler) http.Handler {
 }
 
 // MiddlewareSession checks the session for request and tags username to request context
-func MiddlewareSession(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// func MiddlewareSession(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		usr, err := database.GetUserFromSession(r)
-		if err != nil {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
-			return
-		}
+// 		usr, err := database.GetUserFromSession(r)
+// 		if err != nil {
+// 			http.Error(w, "not authorized", http.StatusUnauthorized)
+// 			return
+// 		}
 
-		ctx := context.WithValue(r.Context(), "user", usr)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
+// 		ctx := context.WithValue(r.Context(), "user", usr)
+// 		next.ServeHTTP(w, r.WithContext(ctx))
+// 	})
+// }
 
 func RegisterAPI(r *mux.Router) {
 	fmt.Println("Welcome to TriCloud REST_API")
@@ -53,7 +52,7 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
-	r.Use(MiddlewareSession, MiddlewareJson)
+	r.Use(MiddlewareJson)
 }
 
 func GenerateResponse(data []byte, err error) []byte {
