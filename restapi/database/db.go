@@ -15,7 +15,6 @@ type User struct {
 	FullName string `json:"fullname,omitempty"`
 	Email    string `json:"email,omitempty"`
 	Active   string `json:"active,omitempty"`
-	Agent    *Agent `json:"agents,omitempty"`
 }
 
 type Agent struct {
@@ -80,10 +79,75 @@ func GetAllUsers() ([]byte, error) {
 	return json_data, err
 }
 
-func DeleteUser(user_id string) error {
+func DeleteUser(id string) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
 		bk := tx.Bucket([]byte("users"))
-		err := bk.Delete([]byte(user_id))
+		err := bk.Delete([]byte(id))
+		return err
+	})
+	return err
+}
+
+func CreateAgent(agent Agent) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		enc, _ := json.Marshal(agent)
+		var dec []byte
+		json.Unmarshal(enc, &dec)
+		fmt.Print(string(enc))
+		if err := bk.Put([]byte(agent.ID), enc); err != nil {
+			return fmt.Errorf("Failed to insert '%s'", agent.ID)
+		}
+		return nil
+	})
+	return err
+}
+
+func GetAllAgents() ([]byte, error) {
+	var agents []Agent
+	Conn.View(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("agents"))
+		x := tx.Bucket([]byte("agents"))
+		c := x.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var data Agent
+			json.Unmarshal(v, &data)
+			agents = append(agents, data)
+		}
+		return nil
+	})
+	m := make(map[string]interface{})
+	m["data"] = agents
+	json_data, err := json.Marshal(m)
+	return json_data, err
+}
+
+func GetAgent(id string) ([]byte, error) {
+	var agent_details User
+	err := Conn.View(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("agents"))
+		x := tx.Bucket([]byte("agents"))
+		agent := x.Get([]byte(id))
+		if agent == nil {
+			return errors.New("No user with ID " + id + " found")
+		}
+		json.Unmarshal(agent, &agent_details)
+		return nil
+	})
+	m := make(map[string]interface{})
+	m["data"] = agent_details
+	json_data, err := json.Marshal(m)
+	return json_data, err
+}
+
+func DeleteAgent(id string) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("agents"))
+		bk := tx.Bucket([]byte("agents"))
+		err := bk.Delete([]byte(id))
 		return err
 	})
 	return err

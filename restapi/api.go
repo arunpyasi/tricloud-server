@@ -49,11 +49,11 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
-	r.HandleFunc("/agent", CreateAgent).Methods("POST")
-	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
-	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
-	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
-	r.Use(MiddlewareJson)
+	r.HandleFunc("/agents", CreateAgent).Methods("POST")
+	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
+	r.HandleFunc("/agents/{id}", UpdateAgent).Methods("PUT")
+	r.HandleFunc("/agents/{id}", DeleteAgent).Methods("DELETE")
+	r.Use(MiddlewareSession, MiddlewareJson)
 }
 
 func GenerateResponse(data []byte, err error) []byte {
@@ -114,8 +114,40 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetAgents(w http.ResponseWriter, r *http.Request)   {}
-func GetAgent(w http.ResponseWriter, r *http.Request)    {}
-func CreateAgent(w http.ResponseWriter, r *http.Request) {}
+func GetAgents(w http.ResponseWriter, r *http.Request) {
+	agents, err := database.GetAllAgents()
+	if err != nil {
+		fmt.Printf("error: %s", err)
+	}
+	resp := GenerateResponse(agents, err)
+	w.Write(resp)
+}
+func GetAgent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	user, err := database.GetAgent(ID)
+	resp := GenerateResponse(user, err)
+	w.Write(resp)
+}
+func CreateAgent(w http.ResponseWriter, r *http.Request) {
+	var agent database.Agent
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &agent)
+	database.CreateAgent(agent)
+	updated_agent, err := database.GetAllAgents()
+	resp := GenerateResponse(updated_agent, err)
+	w.Write(resp)
+}
 func UpdateAgent(w http.ResponseWriter, r *http.Request) {}
-func DeleteAgent(w http.ResponseWriter, r *http.Request) {}
+func DeleteAgent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+	database.DeleteAgent(ID)
+	agents, err := database.GetAllAgents()
+	resp := GenerateResponse(agents, err)
+	w.Write(resp)
+}
