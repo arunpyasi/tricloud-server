@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -102,12 +103,32 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 
 }
-func UpdateUser(w http.ResponseWriter, r *http.Request) {}
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var user database.User
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &user)
+	if id == user.ID {
+
+		database.UpdateUser(id, user)
+		updated_users, err := database.GetUser(id)
+		resp := GenerateResponse(updated_users, err)
+		w.Write(resp)
+	} else {
+		resp := GenerateResponse(nil, errors.New("Invalid ID"))
+		w.Write(resp)
+	}
+}
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ID := vars["id"]
-	database.DeleteUser(ID)
+	id := vars["id"]
+	database.DeleteUser(id)
 	updated_users, err := database.GetAllUsers()
 	resp := GenerateResponse(updated_users, err)
 	w.Write(resp)
@@ -142,7 +163,27 @@ func CreateAgent(w http.ResponseWriter, r *http.Request) {
 	resp := GenerateResponse(updated_agent, err)
 	w.Write(resp)
 }
-func UpdateAgent(w http.ResponseWriter, r *http.Request) {}
+func UpdateAgent(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var agent database.Agent
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &agent)
+	if id == agent.ID {
+		database.UpdateAgent(id, agent)
+		updated_users, err := database.GetAgent(id)
+		resp := GenerateResponse(updated_users, err)
+		w.Write(resp)
+	} else {
+		resp := GenerateResponse(nil, errors.New("Invalid ID"))
+		w.Write(resp)
+	}
+}
+
 func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ID := vars["id"]

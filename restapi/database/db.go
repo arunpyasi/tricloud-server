@@ -79,6 +79,26 @@ func GetAllUsers() ([]byte, error) {
 	return json_data, err
 }
 
+func UpdateUser(id string, user User) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		enc, _ := json.Marshal(user)
+		var dec []byte
+		json.Unmarshal(enc, &dec)
+		if err := bk.Put([]byte(id), enc); err != nil {
+			return fmt.Errorf("Failed to update '%s'", user)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to update : %v", err)
+	}
+	return nil
+}
+
 func DeleteUser(id string) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
 		bk := tx.Bucket([]byte("users"))
@@ -126,7 +146,7 @@ func GetAllAgents() ([]byte, error) {
 }
 
 func GetAgent(id string) ([]byte, error) {
-	var agent_details User
+	var agent_details Agent
 	err := Conn.View(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists([]byte("agents"))
 		x := tx.Bucket([]byte("agents"))
@@ -142,7 +162,25 @@ func GetAgent(id string) ([]byte, error) {
 	json_data, err := json.Marshal(m)
 	return json_data, err
 }
-
+func UpdateAgent(id string, agent Agent) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		enc, _ := json.Marshal(agent)
+		var dec []byte
+		json.Unmarshal(enc, &dec)
+		if err := bk.Put([]byte(id), enc); err != nil {
+			return fmt.Errorf("Failed to update '%s'", agent)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to update : %v", err)
+	}
+	return nil
+}
 func DeleteAgent(id string) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
 		tx.CreateBucketIfNotExists([]byte("agents"))
