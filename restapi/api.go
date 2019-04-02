@@ -53,7 +53,7 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/agent/{id}", GetAgent).Methods("GET")
 	r.HandleFunc("/agent/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agent/{id}", DeleteAgent).Methods("DELETE")
-	r.Use(MiddlewareSession, MiddlewareJson)
+	r.Use(MiddlewareJson)
 }
 
 func GenerateResponse(data []byte, err error) []byte {

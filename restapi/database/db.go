@@ -39,23 +39,21 @@ func CreateUser(user_data User) error {
 		if err := bk.Put([]byte(user_data.ID), enc); err != nil {
 			return fmt.Errorf("Failed to insert '%s'", user_data.ID)
 		}
-		return err
+		return nil
 	})
 	return err
 }
 func GetUser(id string) ([]byte, error) {
-	var user_details []byte
+	var user_details User
 	err := Conn.View(func(tx *bolt.Tx) error {
-		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
-		if err != nil {
-			return err
+		tx.CreateBucketIfNotExists([]byte("users"))
+		x := tx.Bucket([]byte("users"))
+		user := x.Get([]byte(id))
+		if user == nil {
+			return errors.New("No user with ID " + id + " found")
 		}
-		x := bk
-		user_details = x.Get([]byte(id))
-		if user_details == nil {
-			err = errors.New("No user with ID " + id + " found")
-		}
-		return err
+		json.Unmarshal(user, &user_details)
+		return nil
 	})
 	m := make(map[string]interface{})
 	m["data"] = user_details
@@ -66,11 +64,8 @@ func GetUser(id string) ([]byte, error) {
 func GetAllUsers() ([]byte, error) {
 	var users []User
 	Conn.View(func(tx *bolt.Tx) error {
-		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
-		}
-		x := bk
+		tx.CreateBucketIfNotExists([]byte("users"))
+		x := tx.Bucket([]byte("users"))
 		c := x.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			var data User
