@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/indrenicloud/tricloud-server/broker"
@@ -27,14 +28,14 @@ func main() {
 
 	r.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
 	r.HandleFunc("/websocket", mBroker.ServeUserWebsocket)
-	http.ListenAndServe(":8080", r)
+	log.Println(http.ListenAndServe(":8080", r))
 
 }
 
 func listenAgentsConnection() {
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/websocket", mBroker.ServeAgentWebsocket)
-	http.ListenAndServe(":8081", mainRouter)
+	log.Println(http.ListenAndServe(":8081", mainRouter))
 
 }
 
