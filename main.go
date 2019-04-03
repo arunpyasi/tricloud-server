@@ -24,9 +24,9 @@ func main() {
 	restapi.RegisterAuthHandlers(r.PathPrefix("/login").Subrouter())
 	defer database.Close()
 
-	r.HandleFunc("/", rootRoute)
+	// r.HandleFunc("/", rootRoute)
 
-	r.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
+	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
 	r.HandleFunc("/websocket", mBroker.ServeUserWebsocket)
 	log.Println(http.ListenAndServe(":8080", r))
 
@@ -39,6 +39,6 @@ func listenAgentsConnection() {
 
 }
 
-func rootRoute(h http.ResponseWriter, r *http.Request) {
-	http.ServeFile(h, r, "./public/index.html")
-}
+// func rootRoute(h http.ResponseWriter, r *http.Request) {
+// 	http.ServeFile(h, r, "./public/index.html")
+// }

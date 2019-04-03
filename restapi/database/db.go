@@ -9,20 +9,21 @@ import (
 )
 
 type User struct {
-	ID       string `json:"id"`
-	UserName string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	FullName string `json:"fullname,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Active   string `json:"active,omitempty"`
+	ID       string   `json:"id"`
+	UserName string   `json:"username,omitempty"`
+	Password string   `json:"password,omitempty"`
+	FullName string   `json:"fullname,omitempty"`
+	Email    string   `json:"email,omitempty"`
+	Active   string   `json:"active,omitempty"`
+	Agents   []string `json:"agents"`
 }
 
 type Agent struct {
 	ID         string `json:"id"`
 	OS         string `json:"os,omitempty"`
-	Key        string `json:"key,omitempty"`
 	LastLogin  string `json:"lastlogin,omitempty"`
 	FirstAdded string `json:"firstadded,omitempty"`
+	Active     bool   `json:"active,omitempty"`
 }
 
 func CreateUser(user_data User) error {
@@ -168,6 +169,7 @@ func UpdateAgent(id string, agent Agent) error {
 		if err != nil {
 			return fmt.Errorf("Failed to create bucket: %v", err)
 		}
+
 		enc, _ := json.Marshal(agent)
 		var dec []byte
 		json.Unmarshal(enc, &dec)
