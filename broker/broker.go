@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/gorilla/mux"
+	"github.com/indrenicloud/tricloud-server/restapi/database"
 )
 
 type Broker struct {
@@ -38,27 +40,24 @@ func (b *Broker) GetHub(user string) *Hub {
 // ServeAgentWebsocket serves agents
 func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
+	vars := mux.Vars(r)
+	key := vars["key"]
+
+	if key != "456456" {
+		log.Println("invalid key")
+	}
+	owner := "root"
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("could not upgrade to wesocket:", err)
 		return
 	}
 
-	key, ok := r.Form["key"] // todo or cookies
-	if !ok {
-		log.Println("does not have key")
-		return
-	}
+	//parent, err := getParent(key)
 
-	parent, err := getParent(key[0]) // TODO auth
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	hub := b.GetHub(parent)
-	node := NewNodeConn(key[0], AgentType, conn, hub)
+	hub := b.GetHub(owner)
+	node := NewNodeConn(key, AgentType, conn, hub)
 
 	hub.AddConnection <- node
 
@@ -66,20 +65,18 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 // ServeUserWebsocket serves users websocket conn
 func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
+	log.Println("user websocket connn recived")
 
-	//return conn id (uuid)
+	user, err := database.GetUserFromSession(r)
+	if err != nil {
+		log.Println("session not set:", err)
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("could not upgrade to wesocket:", err)
 		return
 	}
-
-	c, err := r.Cookie("wscookie")
-	if err != nil {
-		log.Println("nocookie! but i am hungry", err)
-		return
-	}
-	user := getUserFromCookie(c.Value)
 
 	hub := b.GetHub(user)
 	node := NewNodeConn(user, UserType, conn, hub)

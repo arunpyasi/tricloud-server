@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"log"
 
 	t "github.com/indrenicloud/tricloud-server/core"
 )
@@ -52,6 +53,7 @@ func (h *Hub) Run() {
 			h.CtxCancel()
 			return
 		case node := <-h.AddConnection:
+			log.Println("adding connection to hub")
 			switch node.Type {
 			case AgentType:
 				//todo connection of this identifier may be present

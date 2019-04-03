@@ -25,20 +25,36 @@ func main() {
 	defer database.Close()
 
 	r.HandleFunc("/", rootRoute)
-
-	r.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
 	r.HandleFunc("/websocket", mBroker.ServeUserWebsocket)
+
+	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
+
+	r.Use(Logger)
+
 	log.Println(http.ListenAndServe(":8080", r))
 
 }
 
 func listenAgentsConnection() {
 	mainRouter := mux.NewRouter()
-	mainRouter.HandleFunc("/websocket", mBroker.ServeAgentWebsocket)
+	mainRouter.HandleFunc("/websocket/{key}", mBroker.ServeAgentWebsocket)
 	log.Println(http.ListenAndServe(":8081", mainRouter))
 
 }
 
 func rootRoute(h http.ResponseWriter, r *http.Request) {
-	http.ServeFile(h, r, "./public/index.html")
+	_, err := database.GetUserFromSession(r)
+	log.Println(":|")
+	if err != nil {
+		http.ServeFile(h, r, "./public/login.html")
+		return
+	}
+	http.ServeFile(h, r, "./public/dashboard.html")
+}
+
+func Logger(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("INFOLOG", r.URL.Path)
+		h.ServeHTTP(w, r)
+	})
 }
