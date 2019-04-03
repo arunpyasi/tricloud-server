@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	bolt "go.etcd.io/bbolt"
 )
 
 type User struct {
-	ID       string   `json:"id"`
-	UserName string   `json:"username,omitempty"`
+	ID       string   `json:"id,omitempty"`
 	Password string   `json:"password,omitempty"`
 	FullName string   `json:"fullname,omitempty"`
 	Email    string   `json:"email,omitempty"`
@@ -115,10 +116,9 @@ func CreateAgent(agent Agent) error {
 		if err != nil {
 			return fmt.Errorf("Failed to create bucket: %v", err)
 		}
+		id, _ := uuid.NewRandom()
+		agent.ID = id.String()
 		enc, _ := json.Marshal(agent)
-		var dec []byte
-		json.Unmarshal(enc, &dec)
-		fmt.Print(string(enc))
 		if err := bk.Put([]byte(agent.ID), enc); err != nil {
 			return fmt.Errorf("Failed to insert '%s'", agent.ID)
 		}
