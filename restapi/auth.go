@@ -25,6 +25,8 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 			log.Println("couldnot set session:", err)
 		}
 		log.Println("best password of year")
+		http.Redirect(w, r, "/", 303)
+
 	}
 }
 
