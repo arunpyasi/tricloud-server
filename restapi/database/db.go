@@ -11,7 +11,7 @@ import (
 )
 
 type User struct {
-	ID       string   `json:"id,omitempty"`
+	ID       string   `json:"id"`
 	Password string   `json:"password,omitempty"`
 	FullName string   `json:"fullname,omitempty"`
 	Email    string   `json:"email,omitempty"`
@@ -25,6 +25,11 @@ type Agent struct {
 	LastLogin  string `json:"lastlogin,omitempty"`
 	FirstAdded string `json:"firstadded,omitempty"`
 	Active     bool   `json:"active,omitempty"`
+}
+
+type SysLog struct {
+	AgentID string `json:"agentid"`
+	MemInfo string `json:"meminfo"`
 }
 
 func CreateUser(user_data User) error {
