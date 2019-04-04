@@ -11,7 +11,7 @@ window.addEventListener("load", function(evt) {
   var commandmap = {
     helloserver: CMD_SERVER_HELLO,
     listagents: CMD_LIST_AGENTS,
-    systemifo: CMD_SYSTEM_INFO
+    systeminfo: CMD_SYSTEM_INFO
   };
 
   var print = function(message) {
@@ -44,21 +44,24 @@ window.addEventListener("load", function(evt) {
       return false;
     }
 
-    var cmd = document.getElementById("input").value;
-    var expression = cmd.split(" ");
-
-    switch (expression[0]) {
-      case hello:
-        // code block
-        break;
-      case listagents:
-        // code block
-        break;
-      default:
-      // code block
+    var allcmd = document.getElementById("input").value;
+    var cmd = allcmd.split(" ");
+    //helloserver;
+    if (!(cmd[0] in commandmap)) {
+      print("invalidcommand");
+      return;
     }
 
-    ws.send(JSON.stringify(cmd));
+    // if (cmd.lenght < 3) {
+    //   return
+    // }
+
+    var response = {
+      rident: "456456",
+      cmdtype: commandmap[cmd[0]]
+    };
+
+    ws.send(JSON.stringify(response));
     return false;
   };
 });

@@ -1,28 +1,30 @@
 package broker
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/indrenicloud/tricloud-server/core"
+)
 
 // uid generator
 // is using int32 atomic and reset in max int16 size, return as int16 (casting) better??
 
-type uid uint16
-
 type generator struct {
 	l     sync.Mutex
-	used  map[uid]struct{}
-	value uid
+	used  map[core.UID]struct{}
+	value core.UID
 }
 
 func newGenerator() *generator {
 	return &generator{
 		l:     sync.Mutex{},
-		used:  make(map[uid]struct{}),
-		value: 0,
+		used:  make(map[core.UID]struct{}),
+		value: 1,
 	}
 
 }
 
-func (g *generator) generate() uid {
+func (g *generator) generate() core.UID {
 	g.l.Lock()
 	defer g.l.Unlock()
 	cuid := g.value
@@ -37,7 +39,7 @@ func (g *generator) generate() uid {
 
 }
 
-func (g *generator) free(u uid) {
+func (g *generator) free(u core.UID) {
 	g.l.Lock()
 	defer g.l.Unlock()
 

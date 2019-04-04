@@ -7,6 +7,7 @@ import (
 
 // CommandType could be byte since we won't have more than 255 commands
 type CommandType int
+type UID uint16
 
 const (
 	CMD_SERVER_HELLO CommandType = iota
@@ -21,10 +22,11 @@ var CMD_ALL_MAX CommandType = CMD_BUILTIN_MAX
 
 // MessageFormat is core message format
 type MessageFormat struct {
-	Receiver  int16             `json:"receiver,omitempty"`
-	CmdType   CommandType       `json:"cmdtype,omitempty"`
-	Arguments map[string]string `json:"args,omitempty"`
-	Results   map[string]string `json:"results,omitempty"`
+	ReceiverConnid   UID               `json:"rcid,omitempty"`
+	ReceiverIdentity string            `json:"rident,omitempty"`
+	CmdType          CommandType       `json:"cmdtype,omitempty"`
+	Arguments        map[string]string `json:"args,omitempty"`
+	Results          []string          `json:"results,omitempty"`
 }
 
 func (m *MessageFormat) GetBytes() []byte {

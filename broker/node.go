@@ -5,11 +5,12 @@ import (
 	"log"
 
 	"github.com/gorilla/websocket"
+	"github.com/indrenicloud/tricloud-server/core"
 )
 
 // NodeConn is used to represent both userconnection and agent connection
 type NodeConn struct {
-	Connectionid uid
+	Connectionid core.UID
 	Identifier   string   // key for agent userid for user
 	Type         NodeType // UserType or AgentType
 	readerCtx    context.Context
@@ -71,15 +72,16 @@ func (n *NodeConn) Reader() {
 
 func (n *NodeConn) Writer() {
 	defer n.conn.Close()
-
-	select {
-	case _ = <-n.writerCtx.Done():
-		return
-	case out := <-n.send:
-		err := n.conn.WriteMessage(websocket.TextMessage, out)
-
-		if err != nil {
+	for {
+		select {
+		case _ = <-n.writerCtx.Done():
 			return
+		case out := <-n.send:
+			err := n.conn.WriteMessage(websocket.TextMessage, out)
+
+			if err != nil {
+				return
+			}
 		}
 	}
 
