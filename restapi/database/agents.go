@@ -16,17 +16,34 @@ type Agent struct {
 	FirstAdded string    `json:"firstadded,omitempty"`
 	Active     bool      `json:"active,omitempty"`
 	HostInfo   *HostInfo `json:"hostinfo"`
+	CPUInfo    *CPUInfo  `json:"cpuinfo"`
 }
 type HostInfo struct {
-	Hostname             string `json:"hostname"`
-	Uptime               string `json:"uptime"`
-	Procs                string `json:"procs"`
-	OS                   string `json:"os"`
-	Platform             string `json:"platform"`
-	PlatformFamily       string `json:"platformfamily"`
-	PlatformVersion      string `json:"platformversion"`
-	VirtualizationSystem string `json:"virtualizationsystem"`
+	Hostname             string `json:"hostname,omitempty"`
+	Uptime               string `json:"uptime,omitempty"`
+	Procs                string `json:"procs,omitempty"`
+	OS                   string `json:"os,omitempty"`
+	Platform             string `json:"platform,omitempty"`
+	PlatformFamily       string `json:"platformfamily,omitempty"`
+	PlatformVersion      string `json:"platformversion,omitempty"`
+	VirtualizationSystem string `json:"virtualizationsystem,omitempty"`
 }
+
+type CPUInfo struct {
+	CPU        string `json:"cpu,omitempty"`
+	VendorID   string `json:"vendorid,omitempty"`
+	Family     string `json:"family,omitempty"`
+	Model      string `json:"model,omitempty"`
+	PhysicalID string `json:"physicalid,omitempty"`
+	CoreID     string `json:"coreid,omitempty"`
+	Cores      int    `json:"cores,omitempty"`
+	ModelName  string `json:"modelname,omitempty"`
+	Mhz        string `json:"mhz,omitempty"`
+	CacheSize  string `json:"cachesize,omitempty"`
+	Flags      string `json:"flags,omitempty"`
+	Microcode  string `json:"microcode,omitempty"`
+}
+
 
 func CreateAgent(agent Agent) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
