@@ -15,6 +15,7 @@ type Agent struct {
 	LastLogin  string    `json:"lastlogin,omitempty"`
 	FirstAdded string    `json:"firstadded,omitempty"`
 	Active     bool      `json:"active,omitempty"`
+	APIKey     string    `json:"apikey"`
 	HostInfo   *HostInfo `json:"hostinfo"`
 	CPUInfo    *CPUInfo  `json:"cpuinfo"`
 }
@@ -43,7 +44,6 @@ type CPUInfo struct {
 	Flags      string `json:"flags,omitempty"`
 	Microcode  string `json:"microcode,omitempty"`
 }
-
 
 func CreateAgent(agent Agent) error {
 	err := Conn.Update(func(tx *bolt.Tx) error {
