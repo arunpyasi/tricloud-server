@@ -127,3 +127,87 @@ func DeleteAgent(id string) error {
 	})
 	return err
 }
+
+func CreateHostInfo(id string, hostinfo *HostInfo) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		var agent_details Agent
+		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		x := tx.Bucket([]byte("agents"))
+		agent := x.Get([]byte(id))
+		if agent == nil {
+			return errors.New("No user with ID " + id + " found")
+		}
+		json.Unmarshal(agent, &agent_details)
+		agent_details.HostInfo = hostinfo
+		enc, _ := json.Marshal(agent_details)
+		if err := bk.Put([]byte(agent_details.ID), enc); err != nil {
+			return fmt.Errorf("Failed to insert '%s'", agent_details.ID)
+		}
+		return nil
+	})
+	return err
+}
+
+func GetHostInfo(id string) ([]byte, error) {
+	var agent_details Agent
+	err := Conn.View(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("agents"))
+		x := tx.Bucket([]byte("agents"))
+		agent := x.Get([]byte(id))
+		if agent == nil {
+			return errors.New("No user with ID " + id + " found")
+		}
+
+		json.Unmarshal(agent, &agent_details)
+		return nil
+	})
+	m := make(map[string]interface{})
+	m["data"] = agent_details.HostInfo
+	json_data, err := json.Marshal(m)
+	return json_data, err
+}
+
+func CreateCPUInfo(id string, cpuinfo *CPUInfo) error {
+	err := Conn.Update(func(tx *bolt.Tx) error {
+		var agent_details Agent
+		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
+		if err != nil {
+			return fmt.Errorf("Failed to create bucket: %v", err)
+		}
+		x := tx.Bucket([]byte("agents"))
+		agent := x.Get([]byte(id))
+		if agent == nil {
+			return errors.New("No user with ID " + id + " found")
+		}
+		json.Unmarshal(agent, &agent_details)
+		agent_details.CPUInfo = cpuinfo
+		enc, _ := json.Marshal(agent_details)
+		if err := bk.Put([]byte(agent_details.ID), enc); err != nil {
+			return fmt.Errorf("Failed to insert '%s'", agent_details.ID)
+		}
+		return nil
+	})
+	return err
+}
+
+func GetCPUInfo(id string) ([]byte, error) {
+	var agent_details Agent
+	err := Conn.View(func(tx *bolt.Tx) error {
+		tx.CreateBucketIfNotExists([]byte("agents"))
+		x := tx.Bucket([]byte("agents"))
+		agent := x.Get([]byte(id))
+		if agent == nil {
+			return errors.New("No user with ID " + id + " found")
+		}
+
+		json.Unmarshal(agent, &agent_details)
+		return nil
+	})
+	m := make(map[string]interface{})
+	m["data"] = agent_details.CPUInfo
+	json_data, err := json.Marshal(m)
+	return json_data, err
+}

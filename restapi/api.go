@@ -54,6 +54,14 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
 	r.HandleFunc("/agents/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agents/{id}", DeleteAgent).Methods("DELETE")
+
+	r.HandleFunc("/agents/{id}/hostinfo", CreateHostInfo).Methods("POST")
+	r.HandleFunc("/agents/{id}/hostinfo", GetHostInfo).Methods("GET")
+	r.HandleFunc("/agents/{id}/hostinfo", UpdateHostInfo).Methods("PUT")
+	r.HandleFunc("/agents/{id}/cpuinfo", CreateCPUInfo).Methods("POST")
+	r.HandleFunc("/agents/{id}/cpuinfo", GetCPUInfo).Methods("GET")
+	r.HandleFunc("/agents/{id}/cpuinfo", UpdateCPUInfo).Methods("PUT")
+
 	r.Use(MiddlewareSession, MiddlewareJson)
 }
 
@@ -191,4 +199,59 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 	agents, err := database.GetAllAgents()
 	resp := GenerateResponse(agents, err)
 	w.Write(resp)
+}
+
+func GetHostInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	host_info, err := database.GetHostInfo(id)
+	resp := GenerateResponse(host_info, err)
+	w.Write(resp)
+}
+
+func CreateHostInfo(w http.ResponseWriter, r *http.Request) {
+	var hostinfo *database.HostInfo
+	vars := mux.Vars(r)
+	id := vars["id"]
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &hostinfo)
+	database.CreateHostInfo(id, hostinfo)
+	host_info, err := database.GetHostInfo(id)
+	resp := GenerateResponse(host_info, err)
+	w.Write(resp)
+}
+
+func UpdateHostInfo(w http.ResponseWriter, r *http.Request) {
+}
+
+func GetCPUInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	cpu_info, err := database.GetCPUInfo(id)
+	resp := GenerateResponse(cpu_info, err)
+	w.Write(resp)
+}
+
+func CreateCPUInfo(w http.ResponseWriter, r *http.Request) {
+	var cpuinfo *database.CPUInfo
+	vars := mux.Vars(r)
+	id := vars["id"]
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	json.Unmarshal(body, &cpuinfo)
+	database.CreateCPUInfo(id, cpuinfo)
+	cpu_info, err := database.GetCPUInfo(id)
+	resp := GenerateResponse(cpu_info, err)
+	w.Write(resp)
+}
+
+func UpdateCPUInfo(w http.ResponseWriter, r *http.Request) {
+
 }
