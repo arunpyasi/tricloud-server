@@ -7,12 +7,16 @@ window.addEventListener("load", function(evt) {
   const CMD_LIST_AGENTS = 1;
   const CMD_SERVER_MAX = 2;
   const CMD_SYSTEM_INFO = 3;
+  const CMD_TERMINAL = 4;
 
   var commandmap = {
     helloserver: CMD_SERVER_HELLO,
     listagents: CMD_LIST_AGENTS,
-    systeminfo: CMD_SYSTEM_INFO
+    systeminfo: CMD_SYSTEM_INFO,
+    terminal: CMD_TERMINAL
   };
+
+  var terminal;
 
   var print = function(message) {
     output.innerText = message;
@@ -23,6 +27,7 @@ window.addEventListener("load", function(evt) {
       return false;
     }
     ws = new WebSocket("ws://localhost:8080/websocket");
+
     ws.onopen = function(evt) {
       print("OPEN");
     };
@@ -32,6 +37,7 @@ window.addEventListener("load", function(evt) {
     };
     ws.onmessage = function(evt) {
       print("RESPONSE: " + evt.data);
+      ProcessMessage(evt.data);
     };
     ws.onerror = function(evt) {
       print("ERROR: " + evt.data);
@@ -51,10 +57,31 @@ window.addEventListener("load", function(evt) {
       print("invalidcommand");
       return;
     }
+    print(cmd[0]);
 
-    // if (cmd.lenght < 3) {
-    //   return
-    // }
+    if (commandmap[cmd[0]] == CMD_TERMINAL) {
+      console.log("inside");
+      if (!terminal) {
+        console.log("creating term");
+        terminal = new Terminal();
+        terminal.open(document.getElementById("terminal"));
+        terminal.write("Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ");
+
+        terminal.on("data", function(data) {
+          var response = {
+            rident: "456456",
+            cmdtype: CMD_TERMINAL,
+            args: {
+              data: data
+            }
+          };
+          console.log(typeof data);
+          console.log("data recived", data);
+
+          ws.send(JSON.stringify(response));
+        });
+      }
+    }
 
     var response = {
       rident: "456456",
@@ -64,4 +91,11 @@ window.addEventListener("load", function(evt) {
     ws.send(JSON.stringify(response));
     return false;
   };
+
+  function ProcessMessage(msg) {
+    msgp = JSON.parse(msg);
+    if (msgp["cmdtype"] == CMD_TERMINAL) {
+      terminal.write(msgp["results"][0]);
+    }
+  }
 });
