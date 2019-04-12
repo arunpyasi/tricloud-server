@@ -114,12 +114,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	var user database.User
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
+
+	var user database.User
 	json.Unmarshal(body, &user)
 	if id == user.ID {
 

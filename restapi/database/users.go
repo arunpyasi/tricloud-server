@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	bolt "go.etcd.io/bbolt"
+	"github.com/indrenicloud/tricloud-server/restapi/auth"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -13,45 +15,134 @@ type User struct {
 	Password string   `json:"password,omitempty"`
 	FullName string   `json:"fullname,omitempty"`
 	Email    string   `json:"email,omitempty"`
-	Active   string   `json:"active,omitempty"`
-	Agents   []string `json:"agents"`
+	APIKeys  []string `json:"apikey"`
 }
 
-func CreateUser(user_data User) error {
-	err := Conn.Update(func(tx *bolt.Tx) error {
-		bk, err := tx.CreateBucketIfNotExists([]byte("users"))
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
+var (
+	UserBucketName = []byte("users")
+)
+
+func NewUser(userInfo map[string]string) (*User, error) {
+	fields := []string{"id", "password", "fullname", "email"}
+
+	for _, field := range fields {
+
+		value, ok := userInfo[field]
+		if !ok {
+			return nil, fmt.Errorf("field %s not found", value)
 		}
-		enc, _ := json.Marshal(user_data)
-		var dec []byte
-		json.Unmarshal(enc, &dec)
-		fmt.Print(string(enc))
-		if err := bk.Put([]byte(user_data.ID), enc); err != nil {
-			return fmt.Errorf("Failed to insert '%s'", user_data.ID)
-		}
-		return nil
-	})
-	return err
-}
-func GetUser(id string) ([]byte, error) {
-	var user_details User
-	err := Conn.View(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte("users"))
-		x := tx.Bucket([]byte("users"))
-		user := x.Get([]byte(id))
-		if user == nil {
-			return errors.New("No user with ID " + id + " found")
-		}
-		json.Unmarshal(user, &user_details)
-		return nil
-	})
-	m := make(map[string]interface{})
-	m["data"] = user_details
-	json_data, err := json.Marshal(m)
-	return json_data, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userInfo["password"]), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("couldnot create password hash")
+	}
+
+	return &User{
+		ID:       userInfo["id"],
+		Password: string(hashedPassword),
+		FullName: userInfo["fullname"],
+		Email:    userInfo["email"],
+	}, nil
+
 }
 
+func CreateUser(userInfo map[string]string) error {
+	user, err := NewUser(userInfo)
+	if err != nil {
+		return err
+	}
+	userbyte, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	err = DB.Create([]byte(user.ID), userbyte, UserBucketName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetUser(id string) (*User, error) {
+	user := &User{}
+	userbyte, err := DB.Read([]byte(id), UserBucketName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(userbyte, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func GetapiKeys(id string) ([]string, error) {
+
+	userbyte, err := DB.Read([]byte(id), UserBucketName)
+	if err != nil {
+		return nil, err
+	}
+
+	u := &User{}
+	err = json.Unmarshal(userbyte, u)
+	if err != nil {
+		return nil, err
+	}
+
+	return u.APIKeys, nil
+}
+
+func AddapiKey(id, keytype string) error {
+
+	userbyte, err := DB.Read([]byte(id), UserBucketName)
+	if err != nil {
+		return err
+	}
+
+	u := &User{}
+	err = json.Unmarshal(userbyte, u)
+	if err != nil {
+		return err
+	}
+
+	newkey := auth.NewAPIKey(keytype, id)
+	if newkey == "" {
+		return errors.New("could not create api")
+	}
+
+	u.APIKeys = append(u.APIKeys, newkey)
+	userbyte, err = json.Marshal(u)
+
+	return nil
+}
+
+func RemoveapiKey(id, key string) error {
+	userbyte, err := DB.Read([]byte(id), UserBucketName)
+	if err != nil {
+		return err
+	}
+
+	u := &User{}
+	err = json.Unmarshal(userbyte, u)
+	if err != nil {
+		return err
+	}
+
+	var newkeys []string
+	for _, value := range u.APIKeys {
+		if !(value == key) {
+			newkeys = append(newkeys, value)
+		}
+	}
+	u.APIKeys = newkeys
+	return nil
+}
+
+/*
 func GetAllUsers() ([]byte, error) {
 	var users []User
 	Conn.View(func(tx *bolt.Tx) error {
@@ -99,3 +190,4 @@ func DeleteUser(id string) error {
 	})
 	return err
 }
+*/
