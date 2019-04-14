@@ -2,6 +2,8 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -11,51 +13,52 @@ import (
 var DB = &Boltdb{}
 
 func init() {
+	// TODO get this from config or ENV
+	dev := true
 	path := "mybolt.db"
-	runmigration := false
+
+	var runmigration bool
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		runmigration = true
 	}
 
-	DB.Open(path)
-
-	if runmigration {
-		RunMigration()
+	err := DB.Open(path)
+	if err != nil {
+		panic(err)
 	}
-}
 
-func RunMigration() {
-
-	// TODO get this from config or ENV
-	dev := true
-
-	// if it is devenvironment create some fake users and agents for testing
-	// else just make sure essential buckets are created
+	if !runmigration {
+		return
+	}
 
 	if dev {
 		devMigration()
 	} else {
 		normalMigration()
 	}
-
 }
 
+// if it is devenvironment create some fake users and agents for testing
 func devMigration() {
-	err := CreateUser(map[string]string{
+	usr, err := NewUser(map[string]interface{}{
 		"id":       "batman47",
 		"password": "hard123",
 		"fullname": "Batman Kickass",
 		"email":    "batman47@gentelmanclub.com",
-	})
+	}, true)
+
+	CreateUser(usr)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	err = CreateAgent("batman47")
+	agentid, err := CreateAgent("batman47")
 	if err != nil {
 		log.Println(err)
+		return
 	}
+	log.Println(agentid)
 
 	agentsbyte, err := DB.ReadAll(AgentBucketName)
 
@@ -72,6 +75,7 @@ func devMigration() {
 	}
 }
 
+// else just make sure essential buckets are created
 func normalMigration() {
 	err := DB.conn.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte("users"))
@@ -90,4 +94,24 @@ func normalMigration() {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func checkFields(info map[string]string, fields []string) error {
+
+	if len(info) > len(fields) {
+		return errors.New("More than required fields")
+	}
+
+	if len(info) > len(fields) {
+		return errors.New("Less than required fields")
+	}
+
+	for _, field := range fields {
+
+		value, ok := info[field]
+		if !ok {
+			return fmt.Errorf("field %s not found", value)
+		}
+	}
+	return nil
 }

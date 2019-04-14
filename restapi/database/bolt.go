@@ -1,14 +1,17 @@
 package database
 
 import (
+	"encoding/json"
 	"errors"
 
 	bolt "go.etcd.io/bbolt"
 )
 
 var (
-	ErrorNoBucket      = errors.New("Bucket not found of that name")
-	ErrorValueNotFound = errors.New("Cannot value with that key")
+	ErrorNoBucket         = errors.New("Bucket not found of that name")
+	ErrorValueNotFound    = errors.New("Cannot value with that key")
+	ErrorNotExistToupdate = errors.New("key doesnot exist to update the value")
+	ErrorAlreadyExist     = errors.New("key already exist to update the value")
 )
 
 type Boltdb struct {
@@ -32,6 +35,11 @@ func (b *Boltdb) Create(key, value, bucket []byte) error {
 		bk, err := tx.CreateBucketIfNotExists(bucket)
 		if err != nil {
 			return err
+		}
+
+		olddata := bk.Get(key)
+		if olddata != nil {
+			return ErrorAlreadyExist
 		}
 
 		if err := bk.Put(key, value); err != nil {
@@ -91,6 +99,11 @@ func (b *Boltdb) Update(key, value, bucket []byte) error {
 			return ErrorNoBucket
 		}
 
+		olddata := bk.Get(key)
+		if olddata == nil {
+			return ErrorNotExistToupdate
+		}
+
 		if err := bk.Put(key, value); err != nil {
 			return err
 		}
@@ -118,4 +131,15 @@ func (b *Boltdb) Delete(key, bucket []byte) error {
 
 func (b *Boltdb) Close() {
 	b.conn.Close()
+}
+
+// Encode is unified way to serilize data, this way it might be easier to change encoding(json to gob/msgpack or protobuf?)
+// without having to huntdown and change all serilization code
+func Encode(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+// Decode opposite of encode
+func Decode(raw []byte, out interface{}) error {
+	return json.Unmarshal(raw, out)
 }

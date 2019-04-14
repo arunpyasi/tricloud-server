@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/restapi/database"
+
+	"github.com/gorilla/mux"
+	"github.com/indrenicloud/tricloud-server/restapi/auth"
 )
 
 type Broker struct {
@@ -43,10 +45,10 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
 
-	if key != "456456" {
-		log.Println("invalid key")
+	agent, err := database.GetAgent(key)
+	if err != nil {
+		return
 	}
-	owner := "root"
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -56,7 +58,7 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	//parent, err := getParent(key)
 
-	hub := b.GetHub(owner)
+	hub := b.GetHub(agent.Owner)
 	node := NewNodeConn(key, AgentType, conn, hub)
 
 	hub.AddConnection <- node
@@ -67,9 +69,12 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 	log.Println("user websocket connn recived")
 
-	user, err := database.GetUserFromSession(r)
-	if err != nil {
-		log.Println("session not set:", err)
+	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+	claims, ok := token.Claims.(auth.MyClaims)
+
+	if !ok || !token.Valid {
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -78,13 +83,15 @@ func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hub := b.GetHub(user)
-	node := NewNodeConn(user, UserType, conn, hub)
+	hub := b.GetHub(claims.User)
+	node := NewNodeConn(claims.User, UserType, conn, hub)
 
 	hub.AddConnection <- node
 
 }
 
 func (b *Broker) GetAgents(user string) []string {
+	//b.BLock.Lock()
+	//defer b.BLock.Unlock()
 	return nil
 }

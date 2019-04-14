@@ -8,6 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/indrenicloud/tricloud-server/restapi/auth"
+
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,8 +17,13 @@ import (
 )
 
 // when using refelection to find type  using custom type avoids collision in contex.value
-//type key int
-//const UserType key = iota
+type contextkey int
+
+const ContextUser contextkey = iota
+
+var (
+	ErrorNotAuthorized = errors.New("Not authorized")
+)
 
 func MiddlewareJson(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,13 +36,15 @@ func MiddlewareJson(next http.Handler) http.Handler {
 func MiddlewareSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		usr, err := database.GetUserFromSession(r)
-		if err != nil {
+		token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+		claims, ok := token.Claims.(auth.MyClaims)
+
+		if !ok || !token.Valid {
 			http.Error(w, "not authorized", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", usr)
+		ctx := context.WithValue(r.Context(), ContextUser, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -50,30 +59,19 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
-	r.HandleFunc("/agents", CreateAgent).Methods("POST")
 	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
-	r.HandleFunc("/agents/{id}", UpdateAgent).Methods("PUT")
 	r.HandleFunc("/agents/{id}", DeleteAgent).Methods("DELETE")
-
-	r.HandleFunc("/agents/{id}/hostinfo", CreateHostInfo).Methods("POST")
-	r.HandleFunc("/agents/{id}/hostinfo", GetHostInfo).Methods("GET")
-	r.HandleFunc("/agents/{id}/hostinfo", UpdateHostInfo).Methods("PUT")
-	r.HandleFunc("/agents/{id}/cpuinfo", CreateCPUInfo).Methods("POST")
-	r.HandleFunc("/agents/{id}/cpuinfo", GetCPUInfo).Methods("GET")
-	r.HandleFunc("/agents/{id}/cpuinfo", UpdateCPUInfo).Methods("PUT")
-
 	r.Use(MiddlewareSession, MiddlewareJson)
 }
 
-func GenerateResponse(data []byte, err error) []byte {
+func GenerateResponse(data interface{} /*datatype string,*/, err error) []byte {
 	var response []byte
 
-	fmt.Print(string(data))
-	fmt.Print(err)
 	if data != nil || err == nil {
 		m := make(map[string]interface{})
-		json.Unmarshal(data, &m)
 		m["status"] = "ok"
+		/*m["datatype"] = datatype*/
+		m["data"] = data
 		response, _ = json.Marshal(m)
 	} else {
 		response = []byte(`{"msg":"` + err.Error() + `","status":"failed"}`)
@@ -82,6 +80,12 @@ func GenerateResponse(data []byte, err error) []byte {
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
+	// only if superuser
+	if _, super := parseUser(r); !super {
+		w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+		return
+	}
+
 	users, err := database.GetAllUsers()
 	if err != nil {
 		fmt.Printf("error: %s", err)
@@ -91,50 +95,83 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 }
 func GetUser(w http.ResponseWriter, r *http.Request) {
+	// only if superuser or itself
 	vars := mux.Vars(r)
 	ID := vars["id"]
+	if apiuser, super := parseUser(r); !super {
+		if ID != apiuser {
+			w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+			return
+		}
+	}
 	user, err := database.GetUser(ID)
+	if err != nil {
+		w.Write(GenerateResponse(nil, err))
+		return
+	}
 	resp := GenerateResponse(user, err)
 	w.Write(resp)
 }
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user database.User
+	// only if superuser
+	if _, super := parseUser(r); !super {
+		w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+		return
+	}
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
-	json.Unmarshal(body, &user)
-	database.CreateUser(user)
-	updated_users, err := database.GetAllUsers()
-	resp := GenerateResponse(updated_users, err)
-	w.Write(resp)
+	var userinfo map[string]interface{}
+	err = json.Unmarshal(body, &userinfo)
+	if err != nil {
+		w.Write(GenerateResponse(nil, err))
+	}
+	usr, err := database.NewUser(userinfo, false)
+	if err != nil {
+		w.Write(GenerateResponse(nil, err))
+	}
+	database.CreateUser(usr)
+	updatedusers, err := database.GetAllUsers()
+	w.Write(GenerateResponse(updatedusers, err))
 
 }
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	// only if superuser or that user but cannot change superuser flag
 	vars := mux.Vars(r)
 	id := vars["id"]
+	if apiuser, super := parseUser(r); !super {
+		if id != apiuser {
+			w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+			return
+		}
+	}
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
 	}
 	defer r.Body.Close()
 
-	var user database.User
-	json.Unmarshal(body, &user)
-	if id == user.ID {
+	var userinfo map[string]interface{}
+	json.Unmarshal(body, &userinfo)
+	userinfo["id"] = id
 
-		database.UpdateUser(id, user)
-		updated_users, err := database.GetUser(id)
-		resp := GenerateResponse(updated_users, err)
-		w.Write(resp)
-	} else {
-		resp := GenerateResponse(nil, errors.New("Invalid ID"))
-		w.Write(resp)
-	}
+	database.UpdateUser(userinfo)
+	updated_users, err := database.GetUser(id)
+	resp := GenerateResponse(updated_users, err)
+	w.Write(resp)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	// only if superuser
+	if _, super := parseUser(r); !super {
+		w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+		return
+	}
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	database.DeleteUser(id)
@@ -145,7 +182,10 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAgents(w http.ResponseWriter, r *http.Request) {
-	agents, err := database.GetAllAgents()
+	// only if owns agent
+	user, _ := parseUser(r)
+
+	agents, err := database.GetAllUserAgents(user)
 	if err != nil {
 		fmt.Printf("error: %s", err)
 	}
@@ -153,106 +193,65 @@ func GetAgents(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 func GetAgent(w http.ResponseWriter, r *http.Request) {
+	// only if user owns agent or superuser
 	vars := mux.Vars(r)
 	ID := vars["id"]
-	user, err := database.GetAgent(ID)
+	agent, err := database.GetAgent(ID)
+
+	if err != nil {
+		//not found return
+		w.Write(GenerateResponse(nil, err))
+		return
+	}
+
+	user, super := parseUser(r)
+	if !super {
+		if user != agent.Owner {
+			w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+			return
+		}
+	}
+
 	resp := GenerateResponse(user, err)
 	w.Write(resp)
 }
-func CreateAgent(w http.ResponseWriter, r *http.Request) {
-	var agent database.Agent
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	defer r.Body.Close()
-	json.Unmarshal(body, &agent)
-	database.CreateAgent(agent)
-	updated_agent, err := database.GetAllAgents()
-	resp := GenerateResponse(updated_agent, err)
-	w.Write(resp)
-}
-func UpdateAgent(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	var agent database.Agent
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	defer r.Body.Close()
-	json.Unmarshal(body, &agent)
-	if id == agent.ID {
-		database.UpdateAgent(id, agent)
-		updated_users, err := database.GetAgent(id)
-		resp := GenerateResponse(updated_users, err)
-		w.Write(resp)
-	} else {
-		resp := GenerateResponse(nil, errors.New("Invalid ID"))
-		w.Write(resp)
-	}
-}
 
 func DeleteAgent(w http.ResponseWriter, r *http.Request) {
+	// only if user owns agent or superuser
 	vars := mux.Vars(r)
 	ID := vars["id"]
+
+	agent, err := database.GetAgent(ID)
+
+	if err != nil {
+		//not found return
+		w.Write(GenerateResponse(nil, err))
+		return
+	}
+
+	user, super := parseUser(r)
+	if !super {
+		if user != agent.Owner {
+			w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+			return
+		}
+	}
+
 	database.DeleteAgent(ID)
 	agents, err := database.GetAllAgents()
 	resp := GenerateResponse(agents, err)
 	w.Write(resp)
 }
 
-func GetHostInfo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	host_info, err := database.GetHostInfo(id)
-	resp := GenerateResponse(host_info, err)
-	w.Write(resp)
-}
-
-func CreateHostInfo(w http.ResponseWriter, r *http.Request) {
-	var hostinfo *database.HostInfo
-	vars := mux.Vars(r)
-	id := vars["id"]
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
+func parseUser(r *http.Request) (string, bool) {
+	c := r.Context().Value(ContextUser)
+	claims, ok := c.(auth.MyClaims)
+	if !ok {
+		return "", false
 	}
-	defer r.Body.Close()
-	json.Unmarshal(body, &hostinfo)
-	database.CreateHostInfo(id, hostinfo)
-	host_info, err := database.GetHostInfo(id)
-	resp := GenerateResponse(host_info, err)
-	w.Write(resp)
-}
-
-func UpdateHostInfo(w http.ResponseWriter, r *http.Request) {
-}
-
-func GetCPUInfo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	cpu_info, err := database.GetCPUInfo(id)
-	resp := GenerateResponse(cpu_info, err)
-	w.Write(resp)
-}
-
-func CreateCPUInfo(w http.ResponseWriter, r *http.Request) {
-	var cpuinfo *database.CPUInfo
-	vars := mux.Vars(r)
-	id := vars["id"]
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	user, err := database.GetUser(claims.User)
 	if err != nil {
-		panic(err)
+		return "", false
 	}
-	defer r.Body.Close()
-	json.Unmarshal(body, &cpuinfo)
-	database.CreateCPUInfo(id, cpuinfo)
-	cpu_info, err := database.GetCPUInfo(id)
-	resp := GenerateResponse(cpu_info, err)
-	w.Write(resp)
-}
-
-func UpdateCPUInfo(w http.ResponseWriter, r *http.Request) {
-
+	return claims.User, user.SuperUser
 }

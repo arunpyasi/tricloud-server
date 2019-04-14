@@ -6,6 +6,7 @@ import (
 
 	"github.com/indrenicloud/tricloud-server/broker"
 	"github.com/indrenicloud/tricloud-server/restapi"
+	"github.com/indrenicloud/tricloud-server/restapi/auth"
 	"github.com/indrenicloud/tricloud-server/restapi/database"
 
 	"github.com/gorilla/mux"
@@ -22,7 +23,7 @@ func main() {
 	r := mux.NewRouter()
 	restapi.RegisterAPI(r.PathPrefix("/api").Subrouter())
 	restapi.RegisterAuthHandlers(r.PathPrefix("/login").Subrouter())
-	defer database.Close()
+	defer database.DB.Close()
 
 	r.HandleFunc("/", rootRoute)
 	r.HandleFunc("/websocket", mBroker.ServeUserWebsocket)
@@ -36,16 +37,16 @@ func main() {
 }
 
 func listenAgentsConnection() {
-	mainRouter := mux.NewRouter()
-	mainRouter.HandleFunc("/websocket/{key}", mBroker.ServeAgentWebsocket)
-	log.Println(http.ListenAndServe(":8081", mainRouter))
-
+	agentsRouter := mux.NewRouter()
+	agentsRouter.HandleFunc("/websocket/{key}", mBroker.ServeAgentWebsocket)
+	agentsRouter.HandleFunc("/registeragent", restapi.RegisterAgent).Methods("POST")
+	log.Println(http.ListenAndServe(":8081", agentsRouter))
 }
 
 func rootRoute(h http.ResponseWriter, r *http.Request) {
-	_, err := database.GetUserFromSession(r)
-	log.Println(":|")
-	if err != nil {
+	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+	_, ok := token.Claims.(auth.MyClaims)
+	if !ok || !token.Valid {
 		http.ServeFile(h, r, "./public/login.html")
 		return
 	}

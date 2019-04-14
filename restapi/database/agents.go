@@ -1,7 +1,6 @@
 package database
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -23,11 +22,9 @@ var (
 func NewAgent(owner string) *Agent {
 
 	id, err := uuid.NewRandom()
-
 	if err != nil {
 		return nil
 	}
-
 	return &Agent{
 		ID:         id.String(),
 		Owner:      owner,
@@ -35,23 +32,38 @@ func NewAgent(owner string) *Agent {
 	}
 }
 
-func CreateAgent(owner string) error {
+func CreateAgent(owner string) (string, error) {
+
+	user, err := GetUser(owner)
+
+	if err != nil {
+		return "", errors.New("cannot create agent, user doesnot exist")
+	}
 
 	agent := NewAgent(owner)
 	if agent == nil {
-		return errors.New("could not create agent")
+		return "", errors.New("could not create agent")
 	}
 
-	agentencoded, err := json.Marshal(agent)
+	user.Agents = append(user.Agents, agent.ID)
+
+	agentencoded, err := Encode(agent)
 	if err != nil {
-		return err
+		return "", err
 	}
+
+	userencoded, err := Encode(user)
+	if err != nil {
+		return "", err
+	}
+
+	DB.Update([]byte(user.ID), userencoded, UserBucketName)
 
 	err = DB.Create([]byte(agent.ID), agentencoded, AgentBucketName)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return agent.ID, nil
 }
 
 func GetAgent(id string) (*Agent, error) {
@@ -63,146 +75,92 @@ func GetAgent(id string) (*Agent, error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(agentbyte, agent)
+	err = Decode(agentbyte, agent)
 	if err != nil {
 		return nil, err
 	}
 
 	return agent, nil
 }
+func GetAllUserAgents(id string) ([]*Agent, error) {
 
-/*
-func GetAllAgents() ([]byte, error) {
-	var agents []Agent
-	Conn.View(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte("agents"))
-		x := tx.Bucket([]byte("agents"))
-		c := x.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var data Agent
-			json.Unmarshal(v, &data)
-			agents = append(agents, data)
+	var agents []*Agent
+
+	user, err := GetUser(id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, val := range user.Agents {
+		agent, err := GetAgent(val)
+		if err != nil {
+			continue
 		}
-		return nil
-	})
-	m := make(map[string]interface{})
-	m["data"] = agents
-	json_data, err := json.Marshal(m)
-	return json_data, err
+		agents = append(agents, agent)
+	}
+	return agents, nil
 }
 
+func GetAllAgents() ([]*Agent, error) {
 
-func UpdateAgent(id string, agent Agent) error {
-	err := Conn.Update(func(tx *bolt.Tx) error {
-		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
+	var agents []*Agent
+
+	agentsbyte, err := DB.ReadAll(AgentBucketName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, val := range agentsbyte {
+		var agent Agent
+		err = Decode(val, &agent)
 		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
+			return nil, err
 		}
+		agents = append(agents, &agent)
+	}
+	return agents, nil
+}
 
-		enc, _ := json.Marshal(agent)
-		var dec []byte
-		json.Unmarshal(enc, &dec)
-		if err := bk.Put([]byte(id), enc); err != nil {
-			return fmt.Errorf("Failed to update '%v'", agent)
-		}
-		return nil
+func UpdateAgent(agent *Agent) error {
+
+	agentbyte, err := Encode(agent)
+	if err != nil {
+		return err
+	}
+
+	return DB.Update([]byte(agent.ID), agentbyte, AgentBucketName)
+}
+
+func UpdateSystemInfo(id string, systeminfo map[string]string) error {
+
+	agent, err := GetAgent(id)
+	if err != nil {
+		return err
+	}
+
+	err = checkFields(systeminfo, []string{
+		"hostname", "uptime", "procs", "os", "platform", "platformfamily", "platformversion",
+		"virtualizationsystem", "cpu", "vendorid", "family", "model", "physicalid", "coreid",
+		"cores", "modelname", "mhz", "cachesize", "flags", "microcode",
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to update : %v", err)
-	}
-	return nil
-}
-func DeleteAgent(id string) error {
-	err := Conn.Update(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte("agents"))
-		bk := tx.Bucket([]byte("agents"))
-		err := bk.Delete([]byte(id))
 		return err
-	})
-	return err
+	}
+
+	agent.SystemInfo = systeminfo
+	return UpdateAgent(agent)
 }
 
-func CreateHostInfo(id string, hostinfo *HostInfo) error {
-	err := Conn.Update(func(tx *bolt.Tx) error {
-		var agent_details Agent
-		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
-		}
-		x := tx.Bucket([]byte("agents"))
-		agent := x.Get([]byte(id))
-		if agent == nil {
-			return errors.New("No user with ID " + id + " found")
-		}
-		json.Unmarshal(agent, &agent_details)
-		agent_details.HostInfo = hostinfo
-		enc, _ := json.Marshal(agent_details)
-		if err := bk.Put([]byte(agent_details.ID), enc); err != nil {
-			return fmt.Errorf("Failed to insert '%s'", agent_details.ID)
-		}
-		return nil
-	})
-	return err
+func GetSysteminfo(id string) (map[string]string, error) {
+
+	agent, err := GetAgent(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return agent.SystemInfo, nil
 }
 
-func GetHostInfo(id string) ([]byte, error) {
-	var agent_details Agent
-	err := Conn.View(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte("agents"))
-		x := tx.Bucket([]byte("agents"))
-		agent := x.Get([]byte(id))
-		if agent == nil {
-			return errors.New("No user with ID " + id + " found")
-		}
-
-		json.Unmarshal(agent, &agent_details)
-		return nil
-	})
-	m := make(map[string]interface{})
-	m["data"] = agent_details.HostInfo
-	json_data, err := json.Marshal(m)
-	return json_data, err
+func DeleteAgent(id string) error {
+	return DB.Delete([]byte(id), AgentBucketName)
 }
-
-func CreateCPUInfo(id string, cpuinfo *CPUInfo) error {
-	err := Conn.Update(func(tx *bolt.Tx) error {
-		var agent_details Agent
-		bk, err := tx.CreateBucketIfNotExists([]byte("agents"))
-		if err != nil {
-			return fmt.Errorf("Failed to create bucket: %v", err)
-		}
-		x := tx.Bucket([]byte("agents"))
-		agent := x.Get([]byte(id))
-		if agent == nil {
-			return errors.New("No user with ID " + id + " found")
-		}
-		json.Unmarshal(agent, &agent_details)
-		agent_details.CPUInfo = cpuinfo
-		enc, _ := json.Marshal(agent_details)
-		if err := bk.Put([]byte(agent_details.ID), enc); err != nil {
-			return fmt.Errorf("Failed to insert '%s'", agent_details.ID)
-		}
-		return nil
-	})
-	return err
-}
-
-func GetCPUInfo(id string) ([]byte, error) {
-	var agent_details Agent
-	err := Conn.View(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte("agents"))
-		x := tx.Bucket([]byte("agents"))
-		agent := x.Get([]byte(id))
-		if agent == nil {
-			return errors.New("No user with ID " + id + " found")
-		}
-
-		json.Unmarshal(agent, &agent_details)
-		return nil
-	})
-	m := make(map[string]interface{})
-	m["data"] = agent_details.CPUInfo
-	json_data, err := json.Marshal(m)
-	return json_data, err
-}
-*/
