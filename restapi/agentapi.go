@@ -14,7 +14,7 @@ import (
 func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 
 	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
-	claims, ok := token.Claims.(auth.MyClaims)
+	claims, ok := token.Claims.(*auth.MyClaims)
 
 	if !ok || !token.Valid {
 		http.Error(h, "not authorized", http.StatusUnauthorized)

@@ -69,6 +69,9 @@ func RegisterAPI(r *mux.Router) {
 	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
 	r.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
+	r.HandleFunc("/user/api", GetApiKeys).Methods("GET")
+	r.HandleFunc("/user/api", AddApiKeys).Methods("PUT")
+	r.HandleFunc("/user/api/{key}", RemoveApiKeys).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
 	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
@@ -254,6 +257,41 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 	agents, err := database.GetAllAgents()
 	resp := GenerateResponse(agents, err)
 	w.Write(resp)
+}
+
+func GetApiKeys(w http.ResponseWriter, r *http.Request) {
+	// if user
+	user, _ := parseUser(r)
+	keys, err := database.GetapiKeys(user)
+	GenerateResponse(keys, err)
+}
+
+func AddApiKeys(w http.ResponseWriter, r *http.Request) {
+	// if user
+	user, _ := parseUser(r)
+	err := database.AddapiKey(user, "agent")
+	if err == nil {
+		GenerateResponse("ok", nil)
+		return
+	}
+	GenerateResponse(nil, err)
+}
+
+func RemoveApiKeys(w http.ResponseWriter, r *http.Request) {
+
+	// if user
+	vars := mux.Vars(r)
+	key := vars["key"]
+
+	user, _ := parseUser(r)
+
+	err := database.RemoveapiKey(user, key)
+	if err == nil {
+		GenerateResponse("ok", nil)
+		return
+	}
+	GenerateResponse(nil, err)
+
 }
 
 func parseUser(r *http.Request) (string, bool) {
