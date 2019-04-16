@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/restapi/auth"
 	"github.com/indrenicloud/tricloud-server/restapi/database"
 )
@@ -25,22 +26,29 @@ func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 		http.Error(h, "not authorized", http.StatusUnauthorized)
 	}
 
+	h.Write(GenerateResponse(map[string]string{"id": agentid}, nil))
+}
+
+func UpdateSystemInfo(h http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["key"]
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		http.Error(h, "some error ¯\\_(ツ)_/¯", http.StatusUnauthorized)
+		http.Error(h, "couldnot read body¯", http.StatusUnauthorized)
 	}
 	defer r.Body.Close()
 
-	var userinfo map[string]string
-	err = json.Unmarshal(body, &userinfo)
+	var agentinfo map[string]string
+	err = json.Unmarshal(body, &agentinfo)
 	if err != nil {
-		http.Error(h, "some error ¯\\_(ツ)_/¯", http.StatusUnauthorized)
+		http.Error(h, "could not unmarsel sys info", http.StatusUnauthorized)
 	}
 
-	database.UpdateSystemInfo(claims.User, userinfo)
+	database.UpdateSystemInfo(key, agentinfo)
 
 	if err != nil {
-		http.Error(h, "some error ¯\\_(ツ)_/¯", http.StatusUnauthorized)
+		http.Error(h, "db error", http.StatusUnauthorized)
 	}
-	h.Write(GenerateResponse(map[string]string{"id": agentid}, nil))
+
 }

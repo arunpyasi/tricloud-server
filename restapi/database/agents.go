@@ -84,7 +84,7 @@ func GetAgent(id string) (*Agent, error) {
 }
 func GetAllUserAgents(id string) ([]*Agent, error) {
 
-	var agents []*Agent
+	agents := []*Agent{}
 
 	user, err := GetUser(id)
 	if err != nil {
@@ -103,7 +103,7 @@ func GetAllUserAgents(id string) ([]*Agent, error) {
 
 func GetAllAgents() ([]*Agent, error) {
 
-	var agents []*Agent
+	agents := []*Agent{}
 
 	agentsbyte, err := DB.ReadAll(AgentBucketName)
 	if err != nil {

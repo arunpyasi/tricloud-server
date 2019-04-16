@@ -39,7 +39,8 @@ func main() {
 func listenAgentsConnection() {
 	agentsRouter := mux.NewRouter()
 	agentsRouter.HandleFunc("/websocket/{key}", mBroker.ServeAgentWebsocket)
-	agentsRouter.HandleFunc("/registeragent", restapi.RegisterAgent).Methods("POST")
+	agentsRouter.HandleFunc("/registeragent", restapi.RegisterAgent).Methods("PUT")
+	agentsRouter.HandleFunc("/updatesysinfo/{key}", restapi.RegisterAgent).Methods("POST")
 	log.Println(http.ListenAndServe(":8081", agentsRouter))
 }
 

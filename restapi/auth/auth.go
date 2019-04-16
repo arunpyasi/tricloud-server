@@ -14,7 +14,7 @@ func GeneratePassword(password string) string {
 
 func IsPasswordCorrect(pass, expected string) bool {
 
-	err := bcrypt.CompareHashAndPassword([]byte(pass), []byte(expected))
+	err := bcrypt.CompareHashAndPassword([]byte(expected), []byte(pass))
 	if err == nil {
 		return true
 	}

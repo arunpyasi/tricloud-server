@@ -90,8 +90,20 @@ func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (b *Broker) GetAgents(user string) []string {
-	//b.BLock.Lock()
-	//defer b.BLock.Unlock()
+func (b *Broker) GetActiveAgents(user string) []string {
+	b.BLock.Lock()
+	defer b.BLock.Unlock()
+	hub, ok := b.Hubs[user]
+
+	activeagents := []string{}
+
+	if ok {
+		for key, _ := range hub.ListOfAgents {
+			activeagents = append(activeagents, key)
+
+		}
+		return activeagents
+	}
+
 	return nil
 }

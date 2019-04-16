@@ -40,7 +40,7 @@ func init() {
 
 // if it is devenvironment create some fake users and agents for testing
 func devMigration() {
-	usr, err := NewUser(map[string]interface{}{
+	usr, err := NewUser(map[string]string{
 		"id":       "batman47",
 		"password": "hard123",
 		"fullname": "Batman Kickass",

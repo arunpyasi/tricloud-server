@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
-
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/indrenicloud/tricloud-server/restapi/auth"
 	"github.com/indrenicloud/tricloud-server/restapi/database"
 )
 
@@ -37,9 +36,22 @@ func MiddlewareSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		token := auth.ParseAPIKey(r.Header.Get("Api-key"))
-		claims, ok := token.Claims.(auth.MyClaims)
 
-		if !ok || !token.Valid {
+		if !token.Valid {
+			log.Println("token invalid")
+			http.Error(w, "not authorized", http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(*auth.MyClaims)
+		log.Println(claims)
+
+		if !ok {
+			http.Error(w, "INternal err", http.StatusInternalServerError)
+		}
+
+		if !token.Valid {
+			log.Println("claims not valid")
 			http.Error(w, "not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -124,7 +136,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer r.Body.Close()
-	var userinfo map[string]interface{}
+	var userinfo map[string]string
 	err = json.Unmarshal(body, &userinfo)
 	if err != nil {
 		w.Write(GenerateResponse(nil, err))
@@ -155,7 +167,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var userinfo map[string]interface{}
+	var userinfo map[string]string
 	json.Unmarshal(body, &userinfo)
 	userinfo["id"] = id
 
@@ -174,6 +186,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
+	log.Print("should delete")
 	database.DeleteUser(id)
 	updated_users, err := database.GetAllUsers()
 	resp := GenerateResponse(updated_users, err)
@@ -212,7 +225,7 @@ func GetAgent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := GenerateResponse(user, err)
+	resp := GenerateResponse(agent, err)
 	w.Write(resp)
 }
 
@@ -245,13 +258,9 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 
 func parseUser(r *http.Request) (string, bool) {
 	c := r.Context().Value(ContextUser)
-	claims, ok := c.(auth.MyClaims)
+	claims, ok := c.(*auth.MyClaims)
 	if !ok {
 		return "", false
 	}
-	user, err := database.GetUser(claims.User)
-	if err != nil {
-		return "", false
-	}
-	return claims.User, user.SuperUser
+	return claims.User, claims.Super
 }
