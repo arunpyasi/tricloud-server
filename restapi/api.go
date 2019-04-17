@@ -103,7 +103,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := database.GetAllUsers()
 	if err != nil {
+		w.Write(GenerateResponse(nil, err))
 		fmt.Printf("error: %s", err)
+		return
 	}
 	resp := GenerateResponse(users, err)
 	w.Write(resp)
@@ -136,17 +138,19 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		panic(err)
+		w.Write(GenerateResponse(nil, err))
 	}
 	defer r.Body.Close()
 	var userinfo map[string]string
 	err = json.Unmarshal(body, &userinfo)
 	if err != nil {
 		w.Write(GenerateResponse(nil, err))
+		return
 	}
 	usr, err := database.NewUser(userinfo, false)
 	if err != nil {
 		w.Write(GenerateResponse(nil, err))
+		return
 	}
 	database.CreateUser(usr)
 	updatedusers, err := database.GetAllUsers()

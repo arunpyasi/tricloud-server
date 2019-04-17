@@ -78,12 +78,12 @@ func devMigration() {
 // else just make sure essential buckets are created
 func normalMigration() {
 	err := DB.conn.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("users"))
+		_, err := tx.CreateBucketIfNotExists(UserBucketName)
 		if err != nil {
 			return err
 		}
 
-		_, err = tx.CreateBucketIfNotExists([]byte("agents"))
+		_, err = tx.CreateBucketIfNotExists(AgentBucketName)
 		if err != nil {
 			return err
 		}
