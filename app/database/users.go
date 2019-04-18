@@ -148,11 +148,12 @@ func GetAllUsers() ([]*User, error) {
 		return nil, err
 	}
 
-	for index, val := range usersbyte {
+	for _, val := range usersbyte {
 		user := &User{}
 		err = Decode(val, user)
 		user.Password = ""
-		users[index] = user
+		users = append(users, user)
+
 		if err != nil {
 			return nil, err
 		}
