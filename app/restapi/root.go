@@ -7,7 +7,13 @@ import (
 )
 
 func rootRoute(h http.ResponseWriter, r *http.Request) {
-	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+
+	api := r.Header.Get("Api-key")
+	if api == "" {
+		http.ServeFile(h, r, "./public/login.html")
+		return
+	}
+	token := auth.ParseAPIKey(api)
 	_, ok := token.Claims.(*auth.MyClaims)
 	if !ok || !token.Valid {
 		http.ServeFile(h, r, "./public/login.html")

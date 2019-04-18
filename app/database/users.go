@@ -67,7 +67,6 @@ func GetUser(id string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	user.Password = ""
 
 	return user, nil
 }

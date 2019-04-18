@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/indrenicloud/tricloud-server/app/logg"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -48,6 +49,9 @@ func init() {
 
 // if it is devenvironment create some fake users and agents for testing
 func devMigration() {
+
+	initilizeBuckets([][]byte{UserBucketName, AgentBucketName, SystemStatusBucketName})
+
 	usr, err := NewUser(map[string]string{
 		"id":       "batman47",
 		"password": "hard123",
@@ -80,22 +84,22 @@ func devMigration() {
 
 // else just make sure essential buckets are created
 func normalMigration() {
-	err := DB.conn.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(UserBucketName)
+	initilizeBuckets([][]byte{UserBucketName, AgentBucketName, SystemStatusBucketName})
+}
+
+func initilizeBuckets(buckets [][]byte) {
+	for _, b := range buckets {
+		err := DB.conn.Update(func(tx *bolt.Tx) error {
+			_, err := tx.CreateBucketIfNotExists(b)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
 		if err != nil {
-			return err
+			logg.Error("err in initilizing buckets")
 		}
-
-		_, err = tx.CreateBucketIfNotExists(AgentBucketName)
-		if err != nil {
-			return err
-		}
-		return nil
-
-	})
-
-	if err != nil {
-		log.Println(err)
 	}
 }
 
