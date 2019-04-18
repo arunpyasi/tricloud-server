@@ -2,9 +2,9 @@ package broker
 
 import (
 	"context"
-	"log"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 type Hub struct {
@@ -52,7 +52,7 @@ func (h *Hub) Run() {
 			h.CtxCancel()
 			return
 		case node := <-h.AddConnection:
-			log.Println("adding connection to hub")
+			logg.Info("adding connection to hub")
 			switch node.Type {
 			case AgentType:
 				//todo connection of this identifier may be present
@@ -68,7 +68,7 @@ func (h *Hub) Run() {
 		case _ = <-h.RemoveConnection:
 			//pass
 		case receivedPacket := <-h.PacketChan:
-			log.Println("packet received")
+			logg.Info("packet received")
 
 			h.processPacket(receivedPacket)
 
@@ -91,7 +91,7 @@ func (h *Hub) processPacket(p *packet) {
 	case wire.BroadcastUsers:
 		//pass
 	default:
-		log.Println("Not Implemented")
+		logg.Info("Not Implemented")
 	}
 }
 
@@ -110,12 +110,12 @@ func (h *Hub) broadcastUsers(pak *packet, header *wire.Header) {
 func (h *Hub) handleUserPacket(pak *packet, header *wire.Header) {
 
 	if header.Connid == 0 {
-		log.Println("Don't know where to send packet")
+		logg.Warn("Don't know where to send packet")
 		return
 	}
 	conn, ok := h.AllAgentConns[header.Connid]
 	if !ok {
-		log.Println("Agent connection not found")
+		logg.Warn("Agent connection not found")
 		return
 	}
 	conn.send <- pak.Data
@@ -123,13 +123,13 @@ func (h *Hub) handleUserPacket(pak *packet, header *wire.Header) {
 
 func (h *Hub) handleAgentPacket(pak *packet, header *wire.Header) {
 	if header.Connid == 0 {
-		log.Println("msg donot have recevier conn id")
+		logg.Warn("msg donot have recevier conn id")
 		return
 	}
 
 	conn, ok := h.AllUserConns[header.Connid]
 	if !ok {
-		log.Println("couldnot find connection with id")
+		logg.Warn("couldnot find connection with id")
 		return
 	}
 	conn.send <- pak.Data
