@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/indrenicloud/tricloud-server/restapi/database"
-
 	"github.com/gorilla/mux"
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
+	"github.com/indrenicloud/tricloud-server/app/auth"
+	"github.com/indrenicloud/tricloud-server/app/database"
 )
 
 type Broker struct {
@@ -55,8 +54,6 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 		log.Println("could not upgrade to wesocket:", err)
 		return
 	}
-
-	//parent, err := getParent(key)
 
 	hub := b.GetHub(agent.Owner)
 	node := NewNodeConn(key, AgentType, conn, hub)

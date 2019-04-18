@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
+	"github.com/indrenicloud/tricloud-server/app/auth"
 )
 
 type User struct {

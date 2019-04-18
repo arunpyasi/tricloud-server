@@ -9,8 +9,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
-	"github.com/indrenicloud/tricloud-server/restapi/database"
+	"github.com/indrenicloud/tricloud-server/app/auth"
+	"github.com/indrenicloud/tricloud-server/app/database"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	ErrorAPI               = errors.New("could not generate api")
 )
 
-func RegisterAuthHandlers(r *mux.Router) {
+func registerAuthHandlers(r *mux.Router) {
 
 	r.HandleFunc("/signin", SignIn).Methods("POST")
 }

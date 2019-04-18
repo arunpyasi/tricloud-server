@@ -2,8 +2,9 @@ package auth
 
 import (
 	"errors"
-	"log"
 	"time"
+
+	"github.com/indrenicloud/tricloud-server/app/logg"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -16,7 +17,6 @@ type MyClaims struct {
 	Super    bool   `json:"s,omitempty"`
 	IssuedAt int64  `json:"i,omitempty"`
 	Expiry   int64  `json:"e,omitempty"`
-	//jwt.StandardClaims
 }
 
 func (c MyClaims) Valid() error {
@@ -62,7 +62,7 @@ func NewAPIKey(apitype, username string, superuser bool) string {
 
 	api, err := signer.SignedString(signkey)
 	if err != nil {
-		log.Println("could not generate api:", err)
+		logg.Warn(err)
 		return ""
 	}
 
@@ -75,7 +75,7 @@ func ParseAPIKey(tokenstr string) *jwt.Token {
 		return signkey, nil
 	})
 	if err != nil {
-		log.Println(err)
+		logg.Warn(err)
 		return nil
 	}
 

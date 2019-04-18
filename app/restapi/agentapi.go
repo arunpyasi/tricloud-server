@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
-	"github.com/indrenicloud/tricloud-server/restapi/database"
+	"github.com/indrenicloud/tricloud-server/app/auth"
+	"github.com/indrenicloud/tricloud-server/app/database"
 )
 
 func RegisterAgent(h http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func UpdateSystemInfo(h http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		http.Error(h, "couldnot read body¯", http.StatusUnauthorized)
+		http.Error(h, "couldnot read body", http.StatusUnauthorized)
 	}
 	defer r.Body.Close()
 

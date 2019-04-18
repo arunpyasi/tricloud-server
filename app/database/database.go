@@ -12,6 +12,14 @@ import (
 
 var DB = &Boltdb{}
 
+func Start() {
+
+}
+
+func Close() {
+	DB.Close()
+}
+
 func init() {
 	// TODO get this from config or ENV
 	dev := true
@@ -53,12 +61,7 @@ func devMigration() {
 		log.Println(err)
 	}
 
-	agentid, err := CreateAgent("batman47")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(agentid)
+	AddapiKey("batman47", "agent")
 
 	agentsbyte, err := DB.ReadAll(AgentBucketName)
 

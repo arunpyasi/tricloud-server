@@ -1,9 +1,7 @@
 package restapi
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,81 +9,16 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/indrenicloud/tricloud-server/restapi/auth"
-	"github.com/indrenicloud/tricloud-server/restapi/database"
+	"github.com/indrenicloud/tricloud-server/app/auth"
+	"github.com/indrenicloud/tricloud-server/app/database"
 )
 
-// when using refelection to find type  using custom type avoids collision in contex.value
-type contextkey int
-
-const ContextUser contextkey = iota
-
-var (
-	ErrorNotAuthorized = errors.New("Not authorized")
-)
-
-func MiddlewareJson(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		next.ServeHTTP(w, r)
-	})
-}
-
-// MiddlewareSession checks the session for request and tags username to request context
-func MiddlewareSession(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		token := auth.ParseAPIKey(r.Header.Get("Api-key"))
-
-		if !token.Valid {
-			log.Println("token invalid")
-			http.Error(w, "not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		claims, ok := token.Claims.(*auth.MyClaims)
-		log.Println(claims)
-
-		if !ok {
-			http.Error(w, "INternal err", http.StatusInternalServerError)
-		}
-
-		if !token.Valid {
-			log.Println("claims not valid")
-			http.Error(w, "not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), ContextUser, claims)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func RegisterAPI(r *mux.Router) {
-	fmt.Println("Welcome to TriCloud REST_API")
-
-	r.HandleFunc("/users", GetUsers).Methods("GET")
-	r.HandleFunc("/users", CreateUser).Methods("POST")
-	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
-	r.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
-	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
-	r.HandleFunc("/user/api", GetApiKeys).Methods("GET")
-	r.HandleFunc("/user/api", AddApiKeys).Methods("PUT")
-	r.HandleFunc("/user/api/{key}", RemoveApiKeys).Methods("DELETE")
-
-	r.HandleFunc("/agents", GetAgents).Methods("GET")
-	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
-	r.HandleFunc("/agents/{id}", DeleteAgent).Methods("DELETE")
-	r.Use(MiddlewareSession, MiddlewareJson)
-}
-
-func GenerateResponse(data interface{} /*datatype string,*/, err error) []byte {
+func GenerateResponse(data interface{}, err error) []byte {
 	var response []byte
 
 	if data != nil || err == nil {
 		m := make(map[string]interface{})
 		m["status"] = "ok"
-		/*m["datatype"] = datatype*/
 		m["data"] = data
 		response, _ = json.Marshal(m)
 	} else {
