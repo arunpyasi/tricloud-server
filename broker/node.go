@@ -5,12 +5,12 @@ import (
 	"log"
 
 	"github.com/gorilla/websocket"
-	"github.com/indrenicloud/tricloud-server/core"
+	"github.com/indrenicloud/tricloud-agent/wire"
 )
 
 // NodeConn is used to represent both userconnection and agent connection
 type NodeConn struct {
-	Connectionid core.UID
+	Connectionid wire.UID
 	Identifier   string   // key for agent userid for user
 	Type         NodeType // UserType or AgentType
 	readerCtx    context.Context

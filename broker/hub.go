@@ -2,17 +2,16 @@ package broker
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
-	"github.com/indrenicloud/tricloud-server/core"
+	"github.com/indrenicloud/tricloud-agent/wire"
 )
 
 type Hub struct {
-	AllUserConns  map[core.UID]*NodeConn // TODO lock if ..
-	AllAgentConns map[core.UID]*NodeConn
+	AllUserConns  map[wire.UID]*NodeConn // TODO lock if ..
+	AllAgentConns map[wire.UID]*NodeConn
 
-	ListOfAgents map[string]core.UID // agentkey (not deploy key) with one most current connection
+	ListOfAgents map[string]wire.UID // agentkey (not deploy key) with one most current connection
 
 	AddConnection    chan *NodeConn
 	RemoveConnection chan *NodeConn
@@ -30,10 +29,10 @@ func NewHub() *Hub {
 	ctx, ctxcancel := context.WithCancel(context.Background())
 
 	return &Hub{
-		AllUserConns:  make(map[core.UID]*NodeConn),
-		AllAgentConns: make(map[core.UID]*NodeConn),
+		AllUserConns:  make(map[wire.UID]*NodeConn),
+		AllAgentConns: make(map[wire.UID]*NodeConn),
 
-		ListOfAgents: make(map[string]core.UID),
+		ListOfAgents: make(map[string]wire.UID),
 
 		AddConnection:    make(chan *NodeConn),
 		RemoveConnection: make(chan *NodeConn),
@@ -71,93 +70,68 @@ func (h *Hub) Run() {
 		case receivedPacket := <-h.PacketChan:
 			log.Println("packet received")
 
-			h.ProcessPacket(receivedPacket)
+			h.processPacket(receivedPacket)
 
 		}
 	}
 }
 
-func (h *Hub) ProcessPacket(p *packet) {
+func (h *Hub) processPacket(p *packet) {
 
-	var msg core.MessageFormat
-	json.Unmarshal(p.Data, &msg)
+	header, _ := wire.GetHeader(p.Data)
 
-	if msg.CmdType > core.CMD_SERVER_MAX {
+	switch header.Flow {
+	case wire.AgentToServer, wire.UserToServer:
+		h.consumePacket(p, header)
+		return
+	case wire.UserToAgent:
+		h.handleUserPacket(p, header)
+	case wire.AgentToUser:
+		h.handleAgentPacket(p, header)
+	case wire.BroadcastUsers:
+		//pass
+	default:
+		log.Println("Not Implemented")
+	}
+}
 
-		switch p.Conn.Type {
-		case AgentType:
-			h.ProcessAgentPacket(p, &msg)
-		case UserType:
-			h.ProcessUserPacket(p, &msg)
-		}
+func (h *Hub) consumePacket(pak *packet, header *wire.Header) {
+
+}
+
+func (h *Hub) broadcastUsers(pak *packet, header *wire.Header) {
+
+	for _, conn := range h.AllUserConns {
+		conn.send <- pak.Data
+	}
+
+}
+
+func (h *Hub) handleUserPacket(pak *packet, header *wire.Header) {
+
+	if header.Connid == 0 {
+		log.Println("Don't know where to send packet")
 		return
 	}
-
-	//server packet process here
-
-	switch msg.CmdType {
-	case core.CMD_LIST_AGENTS:
-		agents := make([]string, 10)
-
-		for k := range h.ListOfAgents {
-			agents = append(agents, k)
-		}
-		reciver := p.Conn.Connectionid
-		response := core.MessageFormat{
-
-			CmdType: core.CMD_LIST_AGENTS,
-			Results: agents,
-		}
-
-		out := response.GetBytes()
-		conn, ok := h.AllUserConns[reciver]
-
-		if !ok {
-			log.Println("sending conn not found")
-		}
-		log.Println("sending to user")
-		conn.send <- out
-
+	conn, ok := h.AllAgentConns[header.Connid]
+	if !ok {
+		log.Println("Agent connection not found")
+		return
 	}
-
+	conn.send <- pak.Data
 }
 
-func (h *Hub) ProcessUserPacket(p *packet, msg *core.MessageFormat) {
-
-	if msg.ReceiverConnid == 0 {
-		if msg.ReceiverIdentity == "" {
-			log.Println("Don't know where to send packet")
-			return
-		}
-		//msg.ReceiverConnid
-		id, ok := h.ListOfAgents[msg.ReceiverIdentity]
-		if !ok {
-			log.Println("Don't have agent of that identity")
-			return
-		}
-		conn, ok := h.AllAgentConns[id]
-		if !ok {
-			log.Println("Agent connection not found")
-			return
-		}
-		msg.ReceiverConnid = p.Conn.Connectionid
-		conn.send <- msg.GetBytes()
-
-	}
-
-}
-
-func (h *Hub) ProcessAgentPacket(p *packet, msg *core.MessageFormat) {
-
-	if msg.ReceiverConnid == 0 {
+func (h *Hub) handleAgentPacket(pak *packet, header *wire.Header) {
+	if header.Connid == 0 {
 		log.Println("msg donot have recevier conn id")
 		return
 	}
-	conn, ok := h.AllUserConns[msg.ReceiverConnid]
+
+	conn, ok := h.AllUserConns[header.Connid]
 	if !ok {
 		log.Println("couldnot find connection with id")
 		return
 	}
-	conn.send <- p.Data
+	conn.send <- pak.Data
 
 }

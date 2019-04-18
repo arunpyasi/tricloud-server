@@ -3,7 +3,7 @@ package broker
 import (
 	"sync"
 
-	"github.com/indrenicloud/tricloud-server/core"
+	"github.com/indrenicloud/tricloud-agent/wire"
 )
 
 // uid generator
@@ -11,20 +11,20 @@ import (
 
 type generator struct {
 	l     sync.Mutex
-	used  map[core.UID]struct{}
-	value core.UID
+	used  map[wire.UID]struct{}
+	value wire.UID
 }
 
 func newGenerator() *generator {
 	return &generator{
 		l:     sync.Mutex{},
-		used:  make(map[core.UID]struct{}),
+		used:  make(map[wire.UID]struct{}),
 		value: 1,
 	}
 
 }
 
-func (g *generator) generate() core.UID {
+func (g *generator) generate() wire.UID {
 	g.l.Lock()
 	defer g.l.Unlock()
 	cuid := g.value
@@ -39,7 +39,7 @@ func (g *generator) generate() core.UID {
 
 }
 
-func (g *generator) free(u core.UID) {
+func (g *generator) free(u wire.UID) {
 	g.l.Lock()
 	defer g.l.Unlock()
 
