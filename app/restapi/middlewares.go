@@ -28,8 +28,13 @@ func MiddlewareJson(next http.Handler) http.Handler {
 // MiddlewareSession checks the session for request and tags username to request context
 func MiddlewareSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+		rawapi := r.Header.Get("Api-key")
+		if rawapi == "" {
+			logg.Warn("Token Not set")
+			http.Error(w, "Not Authorized", http.StatusUnauthorized)
+			return
+		}
+		token := auth.ParseAPIKey(rawapi)
 		if !token.Valid {
 			logg.Warn("Token invalid")
 			http.Error(w, "Not Authorized", http.StatusUnauthorized)

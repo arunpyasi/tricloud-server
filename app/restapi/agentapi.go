@@ -9,11 +9,19 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 
-	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
+	rawapi := r.Header.Get("Api-key")
+	if rawapi == "" {
+		logg.Warn("Token Not set @ agent conn")
+		http.Error(h, "Not Authorized", http.StatusUnauthorized)
+		return
+	}
+	token := auth.ParseAPIKey(rawapi)
+
 	claims, ok := token.Claims.(*auth.MyClaims)
 
 	if !ok || !token.Valid {
