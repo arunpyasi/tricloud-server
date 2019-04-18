@@ -1,11 +1,11 @@
 package restapi
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/broker"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 func GetMainRouter(b *broker.Broker) *mux.Router {
@@ -22,7 +22,7 @@ func GetMainRouter(b *broker.Broker) *mux.Router {
 }
 
 func registerUserAPI(r *mux.Router) {
-	fmt.Println("Welcome to TriCloud REST_API")
+	logg.Info("Welcome to TriCloud REST_API")
 
 	r.HandleFunc("/users", GetUsers).Methods("GET")
 	r.HandleFunc("/users", CreateUser).Methods("POST")

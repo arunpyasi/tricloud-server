@@ -1,13 +1,13 @@
 package broker
 
 import (
-	"log"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 type Broker struct {
@@ -51,7 +51,7 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("could not upgrade to wesocket:", err)
+		logg.Warn(err)
 		return
 	}
 
@@ -64,7 +64,7 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 // ServeUserWebsocket serves users websocket conn
 func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
-	log.Println("user websocket connn recived")
+	logg.Info("user websocket connn recived")
 
 	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
 	claims, ok := token.Claims.(auth.MyClaims)
@@ -76,7 +76,7 @@ func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("could not upgrade to wesocket:", err)
+		logg.Warn(err)
 		return
 	}
 

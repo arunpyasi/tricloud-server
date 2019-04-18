@@ -2,15 +2,14 @@ package restapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 func GenerateResponse(data interface{}, err error) []byte {
@@ -37,7 +36,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := database.GetAllUsers()
 	if err != nil {
 		w.Write(GenerateResponse(nil, err))
-		fmt.Printf("error: %s", err)
+		logg.Warn(err)
 		return
 	}
 	resp := GenerateResponse(users, err)
@@ -126,7 +125,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
-	log.Print("should delete")
+	logg.Warn("Deleting user")
 	database.DeleteUser(id)
 	updated_users, err := database.GetAllUsers()
 	resp := GenerateResponse(updated_users, err)
@@ -140,7 +139,7 @@ func GetAgents(w http.ResponseWriter, r *http.Request) {
 
 	agents, err := database.GetAllUserAgents(user)
 	if err != nil {
-		fmt.Printf("error: %s", err)
+		logg.Error(err)
 	}
 	resp := GenerateResponse(agents, err)
 	w.Write(resp)
