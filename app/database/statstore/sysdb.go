@@ -16,7 +16,9 @@ var (
 	ErrNotExists = errors.New("Aagent db doesnot exist")
 )
 
-func initDB(path string) {
+func init() { InitDB("sysstat.db") }
+
+func InitDB(path string) {
 	dbcon, err := bolt.Open(path, 0666, nil)
 	if err != nil {
 		logg.Error(err)
