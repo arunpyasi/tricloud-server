@@ -137,15 +137,15 @@ func UpdateSystemInfo(id string, systeminfo map[string]string) error {
 	if err != nil {
 		return err
 	}
-
-	err = checkFields(systeminfo, []string{
-		"hostname", "uptime", "procs", "os", "platform", "platformfamily", "platformversion",
-		"virtualizationsystem", "cpu", "vendorid", "family", "model", "physicalid", "coreid",
-		"cores", "modelname", "mhz", "cachesize", "flags", "microcode",
-	})
-	if err != nil {
-		return err
-	}
+	/*
+		err = checkFields(systeminfo, []string{
+			"hostname", "uptime", "procs", "os", "platform", "platformfamily", "platformversion",
+			"virtualizationsystem", "cpu", "vendorid", "family", "model", "physicalid", "coreid",
+			"cores", "modelname", "mhz", "cachesize", "flags", "microcode",
+		})
+		if err != nil {
+			return err
+		} */
 
 	agent.SystemInfo = systeminfo
 	return UpdateAgent(agent)

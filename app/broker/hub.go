@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
+	"github.com/indrenicloud/tricloud-server/app/database"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
@@ -97,11 +98,24 @@ func (h *Hub) processPacket(p *packet) {
 
 func (h *Hub) consumePacket(pak *packet, header *wire.Header) {
 
+	go func() {
+		if header.CmdType == wire.CMD_SYSTEMSTAT {
+
+			var stat map[string]string
+			wire.Decode(pak.Data, &stat)
+			database.UpdateSystemStatus(pak.Conn.Identifier, stat)
+		}
+	}()
+
 }
 
 func (h *Hub) broadcastUsers(pak *packet, header *wire.Header) {
 
 	for _, conn := range h.AllUserConns {
+		header.Connid = pak.Conn.Connectionid
+
+		wire.UpdateHeader(header, pak.Data)
+
 		conn.send <- pak.Data
 	}
 

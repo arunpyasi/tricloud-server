@@ -45,6 +45,7 @@ func init() {
 	} else {
 		normalMigration()
 	}
+
 }
 
 // if it is devenvironment create some fake users and agents for testing

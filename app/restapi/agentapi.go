@@ -34,7 +34,7 @@ func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 		http.Error(h, "not authorized", http.StatusUnauthorized)
 	}
 
-	h.Write(GenerateResponse(map[string]string{"id": agentid}, nil))
+	h.Write(GenerateResponse(agentid, nil))
 }
 
 func UpdateSystemInfo(h http.ResponseWriter, r *http.Request) {
@@ -43,20 +43,26 @@ func UpdateSystemInfo(h http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		http.Error(h, "couldnot read body", http.StatusUnauthorized)
+		h.Write([]byte("couldnot read body error"))
+		return
 	}
 	defer r.Body.Close()
 
 	var agentinfo map[string]string
-	err = json.Unmarshal(body, &agentinfo)
-	if err != nil {
-		http.Error(h, "could not unmarsel sys info", http.StatusUnauthorized)
-	}
+	json.Unmarshal(body, &agentinfo)
+	logg.Info(agentinfo)
+	/*
+		delete(agentinfo, "bootTime")
+		delete(agentinfo, "procs")
+		delete(agentinfo, "uptime")
+	*/
 
-	database.UpdateSystemInfo(key, agentinfo)
+	err = database.UpdateSystemInfo(key, agentinfo)
 
 	if err != nil {
-		http.Error(h, "db error", http.StatusUnauthorized)
+		logg.Warn(err)
+		h.Write([]byte("Db error"))
+		return
 	}
 
 }
