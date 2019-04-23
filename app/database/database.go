@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/indrenicloud/tricloud-server/app/config"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 
 	bolt "go.etcd.io/bbolt"
@@ -23,16 +24,14 @@ func Close() {
 }
 
 func init() {
-	// TODO get this from config or ENV
-	dev := true
-	path := "mybolt.db"
+	dev := config.GetConfig().Dev
 
 	var runmigration bool
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(config.GetConfig().DBpath); os.IsNotExist(err) {
 		runmigration = true
 	}
 
-	err := DB.Open(path)
+	err := DB.Open(config.GetConfig().DBpath)
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +51,7 @@ func init() {
 // if it is devenvironment create some fake users and agents for testing
 func devMigration() {
 
-	initilizeBuckets([][]byte{UserBucketName, AgentBucketName, SystemStatusBucketName})
+	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
 
 	usr, err := NewUser(map[string]string{
 		"id":       "batman47",
@@ -86,7 +85,7 @@ func devMigration() {
 
 // else just make sure essential buckets are created
 func normalMigration() {
-	initilizeBuckets([][]byte{UserBucketName, AgentBucketName, SystemStatusBucketName})
+	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
 }
 
 func initilizeBuckets(buckets [][]byte) {

@@ -1,6 +1,9 @@
 package broker
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+	"github.com/indrenicloud/tricloud-agent/wire"
+)
 
 type NodeType byte
 
@@ -10,8 +13,10 @@ const (
 )
 
 type packet struct {
-	Conn *NodeConn
-	Data []byte
+	conn    *NodeConn
+	head    *wire.Header
+	body    []byte
+	rawdata []byte //all bytes including header bytes
 }
 
 var upgrader = websocket.Upgrader{

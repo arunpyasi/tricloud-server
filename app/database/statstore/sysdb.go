@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/indrenicloud/tricloud-server/app/config"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 
 	bolt "go.etcd.io/bbolt"
@@ -13,10 +14,10 @@ import (
 var db *bolt.DB
 
 var (
-	ErrNotExists = errors.New("Aagent db doesnot exist")
+	ErrNotExists = errors.New("Agent db doesnot exist")
 )
 
-func init() { InitDB("sysstat.db") }
+func init() { InitDB(config.GetConfig().StatDBpath) }
 
 func InitDB(path string) {
 	dbcon, err := bolt.Open(path, 0666, nil)
@@ -27,6 +28,9 @@ func InitDB(path string) {
 }
 
 func StoreStat(agentname string, t int64, value []byte) {
+
+	logg.Info(string(value))
+
 	db.Update(func(tx *bolt.Tx) error {
 
 		bkt, err := tx.CreateBucketIfNotExists([]byte(agentname))

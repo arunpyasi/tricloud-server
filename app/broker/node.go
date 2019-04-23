@@ -19,9 +19,8 @@ type NodeConn struct {
 	CloseWriter  context.CancelFunc
 	MyHub        *Hub
 	Running      bool
-
-	conn *websocket.Conn
-	send chan []byte
+	conn         *websocket.Conn
+	send         chan []byte
 }
 
 func NewNodeConn(identifier string, t NodeType, conn *websocket.Conn, h *Hub) *NodeConn {
@@ -45,17 +44,22 @@ func NewNodeConn(identifier string, t NodeType, conn *websocket.Conn, h *Hub) *N
 }
 
 func (n *NodeConn) Reader() {
-
 	for {
-		_, data, err := n.conn.ReadMessage()
+		_, data, err := n.conn.ReadMessage() // todo byte[:read]
 		if err != nil {
 			log.Println(err)
+			n.MyHub.RemoveConnection <- n
 			// todo check the type of error then continue/return depending on it
 			return
 		}
+
+		head, body := wire.GetHeader(data)
+
 		sendPacket := &packet{
-			Conn: n,
-			Data: data,
+			conn:    n,
+			head:    head,
+			body:    body,
+			rawdata: data,
 		}
 
 		n.MyHub.PacketChan <- sendPacket
@@ -80,9 +84,22 @@ func (n *NodeConn) Writer() {
 			err := n.conn.WriteMessage(websocket.TextMessage, out)
 
 			if err != nil {
+				n.MyHub.RemoveConnection <- n
 				return
 			}
 		}
 	}
+
+}
+
+func (n *NodeConn) close() {
+	if n.readerCtx.Err() == nil {
+		n.CloseReader()
+	}
+	if n.writerCtx.Err() == nil {
+		n.CloseWriter()
+	}
+
+	n.conn.Close()
 
 }

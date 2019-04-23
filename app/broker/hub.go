@@ -2,9 +2,10 @@ package broker
 
 import (
 	"context"
+	"time"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
-	"github.com/indrenicloud/tricloud-server/app/database"
+	"github.com/indrenicloud/tricloud-server/app/database/statstore"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
@@ -56,8 +57,10 @@ func (h *Hub) Run() {
 			logg.Info("adding connection to hub")
 			switch node.Type {
 			case AgentType:
-				//todo connection of this identifier may be present
-				// do we remove/close that
+				oldconn, ok := h.AllAgentConns[node.Connectionid]
+				if ok {
+					oldconn.close()
+				}
 				h.AllAgentConns[node.Connectionid] = node
 				h.ListOfAgents[node.Identifier] = node.Connectionid
 			case UserType:
@@ -66,8 +69,15 @@ func (h *Hub) Run() {
 			go node.Reader()
 			go node.Writer()
 
-		case _ = <-h.RemoveConnection:
-			//pass
+		case nconn := <-h.RemoveConnection:
+			if nconn.Type == AgentType {
+				delete(h.ListOfAgents, nconn.Identifier)
+				delete(h.AllAgentConns, nconn.Connectionid)
+			} else if nconn.Type == UserType {
+				delete(h.AllUserConns, nconn.Connectionid)
+			}
+
+			nconn.close()
 		case receivedPacket := <-h.PacketChan:
 			logg.Info("packet received")
 
@@ -79,73 +89,65 @@ func (h *Hub) Run() {
 
 func (h *Hub) processPacket(p *packet) {
 
-	header, _ := wire.GetHeader(p.Data)
-
-	switch header.Flow {
-	case wire.AgentToServer, wire.UserToServer:
-		h.consumePacket(p, header)
-		return
+	switch p.head.Flow {
 	case wire.UserToAgent:
-		h.handleUserPacket(p, header)
+		h.handleUserPacket(p)
 	case wire.AgentToUser:
-		h.handleAgentPacket(p, header)
+		h.handleAgentPacket(p)
 	case wire.BroadcastUsers:
-		//pass
+		h.consumePacket(p)
+		return
 	default:
 		logg.Info("Not Implemented")
 	}
 }
 
-func (h *Hub) consumePacket(pak *packet, header *wire.Header) {
-
-	go func() {
-		if header.CmdType == wire.CMD_SYSTEMSTAT {
-
-			var stat map[string]string
-			wire.Decode(pak.Data, &stat)
-			database.UpdateSystemStatus(pak.Conn.Identifier, stat)
-		}
-	}()
+func (h *Hub) consumePacket(pak *packet) {
+	switch pak.head.CmdType {
+	case wire.CMD_SYSTEM_STAT:
+		go func() {
+			statstore.StoreStat(pak.conn.Identifier, time.Now().UnixNano(), pak.body)
+		}()
+	}
+	h.broadcastUsers(pak)
 
 }
 
-func (h *Hub) broadcastUsers(pak *packet, header *wire.Header) {
+func (h *Hub) broadcastUsers(pak *packet) {
 
 	for _, conn := range h.AllUserConns {
-		header.Connid = pak.Conn.Connectionid
-
-		wire.UpdateHeader(header, pak.Data)
-
-		conn.send <- pak.Data
+		pak.head.Connid = pak.conn.Connectionid
+		conn.send <- wire.UpdateHeader(pak.head, pak.rawdata)
 	}
 
 }
 
-func (h *Hub) handleUserPacket(pak *packet, header *wire.Header) {
+func (h *Hub) handleUserPacket(pak *packet) {
 
-	if header.Connid == 0 {
+	if pak.head.Connid == 0 {
 		logg.Warn("Don't know where to send packet")
 		return
 	}
-	conn, ok := h.AllAgentConns[header.Connid]
+	conn, ok := h.AllAgentConns[pak.head.Connid]
 	if !ok {
 		logg.Warn("Agent connection not found")
 		return
 	}
-	conn.send <- pak.Data
+	pak.head.Connid = pak.conn.Connectionid
+	conn.send <- wire.UpdateHeader(pak.head, pak.rawdata)
 }
 
-func (h *Hub) handleAgentPacket(pak *packet, header *wire.Header) {
-	if header.Connid == 0 {
+func (h *Hub) handleAgentPacket(pak *packet) {
+	if pak.head.Connid == 0 {
 		logg.Warn("msg donot have recevier conn id")
 		return
 	}
 
-	conn, ok := h.AllUserConns[header.Connid]
+	conn, ok := h.AllUserConns[pak.head.Connid]
 	if !ok {
 		logg.Warn("couldnot find connection with id")
 		return
 	}
-	conn.send <- pak.Data
-
+	pak.head.Connid = pak.conn.Connectionid
+	conn.send <- wire.UpdateHeader(pak.head, pak.rawdata)
 }
