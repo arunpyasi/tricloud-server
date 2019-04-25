@@ -7,6 +7,7 @@ import (
 	"github.com/indrenicloud/tricloud-server/app/database"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 	"github.com/indrenicloud/tricloud-server/app/restapi"
+	"github.com/rs/cors"
 )
 
 func Run() {
@@ -16,8 +17,12 @@ func Run() {
 	defer database.Close()
 
 	go listenAgentsConnection(b)
-
-	logg.Warn(http.ListenAndServe(":8080", restapi.GetMainRouter(b)))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
+		AllowCredentials: true,
+	})
+	logg.Warn(http.ListenAndServe(":8080", c.Handler(restapi.GetMainRouter(b))))
 
 }
 

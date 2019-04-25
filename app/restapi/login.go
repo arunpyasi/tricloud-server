@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
 )
@@ -17,11 +16,6 @@ var (
 	ErrorPasswordIncorrect = errors.New("Incorrect password")
 	ErrorAPI               = errors.New("could not generate api")
 )
-
-func registerAuthHandlers(r *mux.Router) {
-
-	r.HandleFunc("/signin", SignIn).Methods("POST")
-}
 
 func SignIn(w http.ResponseWriter, r *http.Request) {
 
