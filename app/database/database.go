@@ -25,9 +25,9 @@ func Close() {
 func init() {
 	dev := config.GetConfig().Dev
 
-	var runmigration bool
+	firstrun := false
 	if _, err := os.Stat(config.GetConfig().DBpath); os.IsNotExist(err) {
-		runmigration = true
+		firstrun = true
 	}
 
 	err := DB.Open(config.GetConfig().DBpath)
@@ -35,22 +35,16 @@ func init() {
 		panic(err)
 	}
 
-	if !runmigration {
-		return
-	}
-
 	if dev {
-		devMigration()
+		devMigration(firstrun)
 	} else {
-		normalMigration()
+		normalMigration(firstrun)
 	}
 
 }
 
 // if it is devenvironment create some fake users and agents for testing
-func devMigration() {
-
-	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
+func devMigration(firstrun bool) {
 
 	userinfo := map[string]string{
 		"id":       "batman47",
@@ -59,19 +53,21 @@ func devMigration() {
 		"email":    "batman47@gentelmanclub.com",
 	}
 
-	usr, err := NewUser(userinfo, true)
+	if firstrun {
+		initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
+		usr, err := NewUser(userinfo, true)
+		logg.Info("Creating a demo user")
+		logg.Info(userinfo)
 
-	logg.Info("Creating a demo user")
-	logg.Info(userinfo)
+		CreateUser(usr)
+		if err != nil {
+			log.Println(err)
+		}
 
-	CreateUser(usr)
-	if err != nil {
-		log.Println(err)
+		AddapiKey(usr.ID, "agent")
 	}
 
-	AddapiKey(usr.ID, "agent")
-
-	user, err := GetUser(usr.ID)
+	user, err := GetUser(userinfo["id"])
 	if err != nil {
 		logg.Error("didnot create user :(")
 		panic(err)
@@ -79,10 +75,22 @@ func devMigration() {
 
 	logg.Info("Demo api key")
 	logg.Info(user.APIKeys)
+
+	agentsbyte, _ := DB.ReadAll(AgentBucketName)
+
+	// logging the all agents
+	if len(agentsbyte) > 0 {
+		logg.Info("All agents in db:")
+	}
+	for _, agentbyte := range agentsbyte {
+		agent := &Agent{}
+		Decode(agentbyte, agent)
+		logg.Info(agent)
+	}
 }
 
 // else just make sure essential buckets are created
-func normalMigration() {
+func normalMigration(firstrun bool) {
 	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
 }
 
