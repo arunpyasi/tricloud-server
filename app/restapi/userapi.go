@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/indrenicloud/tricloud-server/app/database/statstore"
+
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
@@ -228,6 +230,42 @@ func RemoveApiKeys(w http.ResponseWriter, r *http.Request) {
 	}
 	GenerateResponse(nil, err)
 
+}
+
+//{offset}/{noentries}
+func GetAgentStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+
+	agent, err := database.GetAgent(ID)
+	if err != nil {
+		//not found return
+		w.Write(GenerateResponse(nil, err))
+		return
+	}
+
+	user, super := parseUser(r)
+	if !super {
+		if user != agent.Owner {
+			w.Write(GenerateResponse(nil, ErrorNotAuthorized))
+			return
+		}
+	}
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+
+	var statusparm map[string]int64
+	json.Unmarshal(body, &statusparm)
+
+	offset, _ := statusparm["offset"]
+
+	noentries, _ := statusparm["noofentries"]
+
+	GenerateResponse(statstore.GetStats(agent.ID, offset, noentries), nil)
 }
 
 func parseUser(r *http.Request) (string, bool) {

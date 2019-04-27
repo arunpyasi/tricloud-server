@@ -43,6 +43,7 @@ func registerUserAPI(r *mux.Router) {
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
 	r.HandleFunc("/agents/{id}", GetAgent).Methods("GET")
 	r.HandleFunc("/agents/{id}", DeleteAgent).Methods("DELETE")
+	r.HandleFunc("/agents/status/{id}", GetAgentStatus).Methods("POST")
 	r.Use(MiddlewareSession, MiddlewareJson)
 }
 

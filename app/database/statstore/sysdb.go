@@ -2,6 +2,7 @@ package statstore
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"log"
 
@@ -52,7 +53,31 @@ func StoreStat(agentname string, t int64, value []byte) {
 	})
 }
 
-func GetStats(agentname string, noOfEntries, offset int64) ([][]byte, [][]byte, error) {
+func GetStats(agentname string, noOfEntries, offset int64) map[int64]map[string]interface{} {
+	m := make(map[int64]map[string]interface{})
+
+	keybytes, valbytes, err := getStats(agentname, noOfEntries, offset)
+	if err != nil {
+		return m
+	}
+
+	for index, key := range keybytes {
+
+		vb := valbytes[index]
+		v := make(map[string]interface{})
+		err = json.Unmarshal(vb, &v)
+		if err != nil {
+			logg.Warn("decoding stats error!")
+			return m
+		}
+
+		m[int64(binary.LittleEndian.Uint64(key))] = v
+	}
+
+	return m
+}
+
+func getStats(agentname string, noOfEntries, offset int64) ([][]byte, [][]byte, error) {
 
 	var outkeybytes [][]byte
 	var outvalbytes [][]byte
@@ -68,9 +93,17 @@ func GetStats(agentname string, noOfEntries, offset int64) ([][]byte, [][]byte, 
 		c := bkt.Cursor()
 
 		offbyte := make([]byte, 8)
-		binary.LittleEndian.PutUint64(offbyte, uint64(offset))
+		if offset == 0 {
+			k, _ := c.First()
+			offbyte = k
+		} else {
+			binary.LittleEndian.PutUint64(offbyte, uint64(offset))
+		}
 
-		var count int64 = 0
+		if noOfEntries == 0 {
+			noOfEntries = 10
+		}
+		count := int64(0)
 
 		for k, v := c.Seek(offbyte); k != nil; k, v = c.Next() {
 			outkeybytes = append(outkeybytes, k)
