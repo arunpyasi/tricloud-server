@@ -69,6 +69,23 @@ func (h *Hub) Run() {
 			go node.Reader()
 			go node.Writer()
 
+			s := &wire.SysStatCmd{
+				Interval: 5,
+				Timeout:  20,
+			}
+
+			b, err := wire.Encode(
+				node.Connectionid,
+				wire.CMD_SYSTEM_STAT,
+				wire.BroadcastUsers,
+				s,
+			)
+			if err == nil {
+				node.send <- b
+			} else {
+				logg.Warn("Encoding sysemstat cmd error")
+			}
+
 		case nconn := <-h.RemoveConnection:
 			if nconn.Type == AgentType {
 				delete(h.ListOfAgents, nconn.Identifier)
