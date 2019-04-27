@@ -21,6 +21,10 @@ func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := auth.ParseAPIKey(rawapi)
+	if token == nil {
+		http.Error(h, "Invalid api key", http.StatusUnauthorized)
+		return
+	}
 
 	claims, ok := token.Claims.(*auth.MyClaims)
 

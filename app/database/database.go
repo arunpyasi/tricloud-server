@@ -1,7 +1,6 @@
 package database
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -53,34 +52,33 @@ func devMigration() {
 
 	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
 
-	usr, err := NewUser(map[string]string{
+	userinfo := map[string]string{
 		"id":       "batman47",
 		"password": "hard123",
 		"fullname": "Batman Kickass",
 		"email":    "batman47@gentelmanclub.com",
-	}, true)
+	}
+
+	usr, err := NewUser(userinfo, true)
+
+	logg.Info("Creating a demo user")
+	logg.Info(userinfo)
 
 	CreateUser(usr)
-
 	if err != nil {
 		log.Println(err)
 	}
 
-	AddapiKey("batman47", "agent")
+	AddapiKey(usr.ID, "agent")
 
-	agentsbyte, err := DB.ReadAll(AgentBucketName)
-
+	user, err := GetUser(usr.ID)
 	if err != nil {
-		log.Println(err)
-		return
+		logg.Error("didnot create user :(")
+		panic(err)
 	}
 
-	// logging the all agents
-	for _, agentbyte := range agentsbyte {
-		agent := &Agent{}
-		json.Unmarshal(agentbyte, agent)
-		log.Println(agent.ID, "::", agent.Owner)
-	}
+	logg.Info("Demo api key")
+	logg.Info(user.APIKeys)
 }
 
 // else just make sure essential buckets are created
