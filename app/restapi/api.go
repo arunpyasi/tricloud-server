@@ -18,7 +18,6 @@ func GetMainRouter(b *broker.Broker) *mux.Router {
 	r.HandleFunc("/websocket", b.ServeUserWebsocket)
 	r.HandleFunc("/", rootRoute)
 	r.Use(Logger)
-
 	return r
 }
 

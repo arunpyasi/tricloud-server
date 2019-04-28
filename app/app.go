@@ -21,6 +21,7 @@ func Run() {
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
 		AllowCredentials: true,
+		AllowedHeaders:   []string{"Api-key", "Content-Type", "Accept"},
 	})
 	logg.Warn(http.ListenAndServe(":8080", c.Handler(restapi.GetMainRouter(b))))
 
