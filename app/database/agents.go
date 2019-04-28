@@ -5,15 +5,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/indrenicloud/tricloud-agent/wire"
 )
 
 type Agent struct {
-	ID         string            `json:"id"`
-	Owner      string            `json:"owner"`
-	LastLogin  time.Time         `json:"lastlogin,omitempty"`
-	FirstAdded time.Time         `json:"firstadded,omitempty"`
-	SystemInfo map[string]string `json:"systeminfo,omitempty"`
-	Active     bool              `json:"active,omitempty"`
+	ID           string            `json:"id"`
+	Owner        string            `json:"owner"`
+	LastLogin    time.Time         `json:"lastlogin,omitempty"`
+	FirstAdded   time.Time         `json:"firstadded,omitempty"`
+	SystemInfo   map[string]string `json:"systeminfo,omitempty"`
+	Active       bool              `json:"active,omitempty"`
+	ActiveConnid wire.UID          `json:"connid,omitempty`
 }
 
 var (

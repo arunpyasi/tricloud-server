@@ -8,9 +8,11 @@ import (
 	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
+var cbroker *broker.Broker
+
 // Main Router
 func GetMainRouter(b *broker.Broker) *mux.Router {
-
+	cbroker = b
 	r := mux.NewRouter()
 	registerUserAPI(r.PathPrefix("/api").Subrouter())
 	registerAuthHandlers(r.PathPrefix("/login").Subrouter())
@@ -23,7 +25,6 @@ func GetMainRouter(b *broker.Broker) *mux.Router {
 
 func registerAuthHandlers(r *mux.Router) {
 	r.HandleFunc("/signin", SignIn).Methods("POST")
-
 	r.Use(MiddlewareJson)
 }
 

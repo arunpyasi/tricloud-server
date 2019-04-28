@@ -131,6 +131,14 @@ func GetAgents(w http.ResponseWriter, r *http.Request) {
 		errorResp(w, err)
 		return
 	}
+	activeagents := cbroker.GetActiveAgents(user)
+	for _, agent := range agents {
+		connid, ok := activeagents[agent.ID]
+		if ok {
+			agent.Active = true
+			agent.ActiveConnid = connid
+		}
+	}
 	generateResp(w, agents, err)
 }
 
@@ -148,6 +156,13 @@ func GetAgent(w http.ResponseWriter, r *http.Request) {
 	if !isAuthorized(agent.Owner, r) {
 		errorResp(w, ErrorNotAuthorized)
 		return
+	}
+
+	activeagents := cbroker.GetActiveAgents(agent.Owner)
+	connid, ok := activeagents[agent.ID]
+	if ok {
+		agent.Active = true
+		agent.ActiveConnid = connid
 	}
 
 	generateResp(w, agent, err)
