@@ -38,7 +38,7 @@ func RegisterAgent(h http.ResponseWriter, r *http.Request) {
 		http.Error(h, "not authorized", http.StatusUnauthorized)
 	}
 
-	h.Write(GenerateResponse(agentid, nil))
+	generateResp(h, agentid, nil)
 }
 
 func UpdateSystemInfo(h http.ResponseWriter, r *http.Request) {

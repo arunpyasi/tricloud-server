@@ -1,7 +1,6 @@
 package restapi
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -13,8 +12,8 @@ import (
 )
 
 var (
-	ErrorPasswordIncorrect = errors.New("Incorrect password")
-	ErrorAPI               = errors.New("could not generate api")
+	ErrorLoginIncorrect = errors.New("Incorrect login details")
+	ErrorAPI            = errors.New("could not generate api")
 )
 
 func SignIn(w http.ResponseWriter, r *http.Request) {
@@ -26,9 +25,10 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	var logininfo map[string]string
-	err = json.Unmarshal(body, &logininfo) //todo check fields
+	err = deJson(body, &logininfo) //todo check fields
 	if err != nil {
-		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	log.Print(logininfo)
@@ -36,21 +36,21 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	user, err := database.GetUser(logininfo["userid"])
 
 	if err != nil {
-		w.Write(GenerateResponse(nil, err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if !auth.IsPasswordCorrect(logininfo["password"], user.Password) {
-		w.Write(GenerateResponse(nil, ErrorPasswordIncorrect))
+		http.Error(w, ErrorLoginIncorrect.Error(), http.StatusBadRequest)
 		return
 	}
-	var apierr error
 	api := auth.NewAPIKey("session", user.ID, user.SuperUser)
 
 	if api == "" {
-		apierr = ErrorAPI
+		http.Error(w, ErrorAPI.Error(), http.StatusBadRequest)
+		return
 	}
 
-	resp := GenerateResponse(map[string]string{"api": api}, apierr)
-	w.Write(resp)
+	generateResp(w, map[string]string{"api": api}, nil)
+
 }
