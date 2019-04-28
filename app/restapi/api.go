@@ -49,8 +49,8 @@ func registerUserAPI(r *mux.Router) {
 
 func GetAgentRouter(b *broker.Broker) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/registeragent", RegisterAgent).Methods("PUT")
-	r.HandleFunc("/updatesysinfo/{key}", UpdateSystemInfo).Methods("POST")
+	r.HandleFunc("/registeragent", RegisterAgent).Methods("POST")
+	r.HandleFunc("/updatesysinfo/{key}", UpdateSystemInfo).Methods("PUT")
 	r.HandleFunc("/websocket/{key}", b.ServeAgentWebsocket)
 
 	return r
