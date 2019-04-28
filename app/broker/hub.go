@@ -18,7 +18,8 @@ type Hub struct {
 	AddConnection    chan *NodeConn
 	RemoveConnection chan *NodeConn
 
-	PacketChan chan *packet
+	PacketChan      chan *packet
+	queryAgentsChan chan *agentsQuery
 
 	Ctx       context.Context
 	CtxCancel context.CancelFunc
@@ -39,6 +40,7 @@ func NewHub() *Hub {
 		AddConnection:    make(chan *NodeConn),
 		RemoveConnection: make(chan *NodeConn),
 		PacketChan:       make(chan *packet),
+		queryAgentsChan:  make(chan *agentsQuery),
 		Ctx:              ctx,
 		CtxCancel:        ctxcancel,
 		IDGenerator:      newGenerator(),
@@ -99,6 +101,12 @@ func (h *Hub) Run() {
 			logg.Info("packet received")
 
 			h.processPacket(receivedPacket)
+		case q := <-h.queryAgentsChan:
+			activeagents := make(map[string]wire.UID)
+			for key, val := range h.ListOfAgents {
+				activeagents[key] = val
+			}
+			q.responseChan <- activeagents
 
 		}
 	}

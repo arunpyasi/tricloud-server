@@ -13,6 +13,7 @@ type Agent struct {
 	LastLogin  time.Time         `json:"lastlogin,omitempty"`
 	FirstAdded time.Time         `json:"firstadded,omitempty"`
 	SystemInfo map[string]string `json:"systeminfo,omitempty"`
+	Active     bool              `json:"active,omitempty"`
 }
 
 var (

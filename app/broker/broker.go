@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/indrenicloud/tricloud-agent/wire"
+
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
@@ -87,20 +89,18 @@ func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (b *Broker) GetActiveAgents(user string) []string {
+func (b *Broker) GetActiveAgents(user string) map[string]wire.UID {
 	b.BLock.Lock()
 	defer b.BLock.Unlock()
+
 	hub, ok := b.Hubs[user]
-
-	activeagents := []string{}
-
-	if ok {
-		for key, _ := range hub.ListOfAgents {
-			activeagents = append(activeagents, key)
-
-		}
-		return activeagents
+	if !ok {
+		return nil
 	}
+	req := &agentsQuery{
+		responseChan: make(chan map[string]wire.UID),
+	}
+	hub.queryAgentsChan <- req
 
-	return nil
+	return <-req.responseChan
 }

@@ -23,3 +23,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
+
+type agentsQuery struct {
+	responseChan chan map[string]wire.UID
+}
