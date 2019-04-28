@@ -116,10 +116,9 @@ func (b *Boltdb) Update(key, value, bucket []byte) error {
 func (b *Boltdb) Delete(key, bucket []byte) error {
 	err := b.conn.Update(func(tx *bolt.Tx) error {
 		bk := tx.Bucket(bucket)
-		if bk != nil {
+		if bk == nil {
 			return ErrorNoBucket
 		}
-
 		if err := bk.Delete(key); err != nil {
 			return err
 		}

@@ -174,7 +174,6 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 	// only if user owns agent or superuser
 	vars := mux.Vars(r)
 	ID := vars["id"]
-
 	agent, err := database.GetAgent(ID)
 
 	if err != nil {
@@ -190,7 +189,6 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	database.DeleteAgent(ID)
 	agents, err := database.GetAllAgents()
 	resp := GenerateResponse(agents, err)
