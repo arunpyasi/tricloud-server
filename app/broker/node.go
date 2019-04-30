@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/indrenicloud/tricloud-agent/wire"
@@ -80,7 +79,7 @@ func (n *NodeConn) Writer() {
 	for {
 		select {
 		case _ = <-n.writerCtx.Done():
-			n.conn.WriteControl(websocket.CloseGoingAway, []byte("goodbye"), time.Now().Add(2*time.Second))
+			//n.conn.WriteControl(websocket.CloseGoingAway, []byte("goodbye"), time.Now())
 			return
 		case out := <-n.send:
 			err := n.conn.WriteMessage(websocket.TextMessage, out)

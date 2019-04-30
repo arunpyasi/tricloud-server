@@ -73,11 +73,11 @@ func (h *Hub) Run() {
 			go node.Reader()
 			go node.Writer()
 
-			break
+			//break
 
 			s := &wire.SysStatCmd{
 				Interval: 5,
-				Timeout:  20,
+				Timeout:  200,
 			}
 
 			b, err := wire.Encode(
@@ -119,6 +119,9 @@ func (h *Hub) Run() {
 
 			conn, ok := h.AllAgentConns[agentconid]
 			if ok {
+				e := &wire.Exit{}
+				b, _ := wire.Encode(conn.Connectionid, wire.CMD_EXIT, wire.DefaultFlow, e)
+				conn.send <- b
 				logg.Warn("removing agent from hub")
 				h.RemoveConnection <- conn
 			}
