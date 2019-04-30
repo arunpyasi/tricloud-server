@@ -104,3 +104,14 @@ func (b *Broker) GetActiveAgents(user string) map[string]wire.UID {
 
 	return <-req.responseChan
 }
+func (b *Broker) RemoveAgent(agentid, user string) {
+	b.BLock.Lock()
+	defer b.BLock.Unlock()
+
+	hub, ok := b.Hubs[user]
+	if ok {
+		logg.Info("removing agent")
+		hub.removeagentChan <- agentid
+	}
+	logg.Info("removing agent  done")
+}

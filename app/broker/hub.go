@@ -20,6 +20,7 @@ type Hub struct {
 
 	PacketChan      chan *packet
 	queryAgentsChan chan *agentsQuery
+	removeagentChan chan string
 
 	Ctx       context.Context
 	CtxCancel context.CancelFunc
@@ -41,6 +42,7 @@ func NewHub() *Hub {
 		RemoveConnection: make(chan *NodeConn),
 		PacketChan:       make(chan *packet),
 		queryAgentsChan:  make(chan *agentsQuery),
+		removeagentChan:  make(chan string),
 		Ctx:              ctx,
 		CtxCancel:        ctxcancel,
 		IDGenerator:      newGenerator(),
@@ -70,6 +72,8 @@ func (h *Hub) Run() {
 			}
 			go node.Reader()
 			go node.Writer()
+
+			break
 
 			s := &wire.SysStatCmd{
 				Interval: 5,
@@ -107,9 +111,21 @@ func (h *Hub) Run() {
 				activeagents[key] = val
 			}
 			q.responseChan <- activeagents
+		case agentid := <-h.removeagentChan:
+			agentconid, ok := h.ListOfAgents[agentid]
+			if !ok {
+				break
+			}
+
+			conn, ok := h.AllAgentConns[agentconid]
+			if ok {
+				logg.Warn("removing agent from hub")
+				h.RemoveConnection <- conn
+			}
 
 		}
 	}
+	logg.Info("hub exitting")
 }
 
 func (h *Hub) processPacket(p *packet) {

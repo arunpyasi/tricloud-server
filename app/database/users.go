@@ -125,13 +125,7 @@ func RemoveapiKey(id, key string) error {
 		return err
 	}
 
-	var newkeys []string
-	for _, value := range u.APIKeys {
-		if !(value == key) {
-			newkeys = append(newkeys, value)
-		}
-	}
-	u.APIKeys = newkeys
+	u.APIKeys = deleteSliceItem(u.APIKeys, key)
 
 	userbyte, err = Encode(u)
 	if err != nil {

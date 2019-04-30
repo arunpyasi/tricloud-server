@@ -184,7 +184,9 @@ func DeleteAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	database.DeleteAgent(ID)
+	database.DeleteAgent(ID, agent.Owner)
+	cbroker.RemoveAgent(ID, agent.Owner)
+
 	agents, err := database.GetAllAgents()
 	generateResp(w, agents, err)
 }

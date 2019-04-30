@@ -129,3 +129,13 @@ func checkFields(info map[string]string, fields []string) error {
 	}
 	return nil
 }
+
+func deleteSliceItem(s []string, item string) []string {
+	var newslice []string
+	for _, value := range s {
+		if value != item {
+			newslice = append(newslice, value)
+		}
+	}
+	return newslice
+}

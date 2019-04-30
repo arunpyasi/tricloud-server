@@ -164,6 +164,16 @@ func GetSysteminfo(id string) (map[string]string, error) {
 	return agent.SystemInfo, nil
 }
 
-func DeleteAgent(id string) error {
+func DeleteAgent(id, owner string) error {
+	u, err := GetUser(owner)
+	if err != nil {
+		return err
+	}
+	u.Agents = deleteSliceItem(u.Agents, id)
+	userbyte, err := Encode(u)
+	if err != nil {
+		return err
+	}
+	DB.Update([]byte(u.ID), userbyte, UserBucketName)
 	return DB.Delete([]byte(id), AgentBucketName)
 }
