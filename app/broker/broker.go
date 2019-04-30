@@ -101,8 +101,9 @@ func (b *Broker) GetActiveAgents(user string) map[string]wire.UID {
 		responseChan: make(chan map[string]wire.UID),
 	}
 	hub.queryAgentsChan <- req
-
-	return <-req.responseChan
+	am := <-req.responseChan
+	logg.Info("LOCKOFF recived from channel")
+	return am
 }
 func (b *Broker) RemoveAgent(agentid, user string) {
 	b.BLock.Lock()
@@ -113,5 +114,5 @@ func (b *Broker) RemoveAgent(agentid, user string) {
 		logg.Info("removing agent")
 		hub.removeagentChan <- agentid
 	}
-	logg.Info("removing agent  done")
+	logg.Info("LOCKOFF removing agent  done")
 }

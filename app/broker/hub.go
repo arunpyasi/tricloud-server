@@ -73,7 +73,7 @@ func (h *Hub) Run() {
 			go node.Reader()
 			go node.Writer()
 
-			//break
+			break
 
 			s := &wire.SysStatCmd{
 				Interval: 5,
@@ -123,7 +123,10 @@ func (h *Hub) Run() {
 				b, _ := wire.Encode(conn.Connectionid, wire.CMD_EXIT, wire.DefaultFlow, e)
 				conn.send <- b
 				logg.Warn("removing agent from hub")
-				h.RemoveConnection <- conn
+				go func() {
+					h.RemoveConnection <- conn
+				}()
+
 			}
 
 		}
