@@ -67,29 +67,41 @@ func (h *Hub) Run() {
 				}
 				h.AllAgentConns[node.Connectionid] = node
 				h.ListOfAgents[node.Identifier] = node.Connectionid
+
+				go node.Reader()
+				go node.Writer()
+
+				logg.Info("starting system staticstcs service")
+				s := &wire.SysStatCmd{
+					Interval: 5,
+					Timeout:  200,
+				}
+				b, err := wire.Encode(
+					node.Connectionid,
+					wire.CMD_SYSTEM_STAT,
+					wire.BroadcastUsers,
+					s,
+				)
+				if err != nil {
+					logg.Warn("Encoding sysemstat cmd error")
+				}
+				node.send <- b
+
 			case UserType:
 				h.AllUserConns[node.Connectionid] = node
-			}
-			go node.Reader()
-			go node.Writer()
 
-			break
+				go node.Reader()
+				go node.Writer()
 
-			s := &wire.SysStatCmd{
-				Interval: 5,
-				Timeout:  200,
-			}
+				b, err := wire.Encode(node.Connectionid,
+					wire.CMD_SERVER_HELLO,
+					wire.DefaultFlow,
+					"hello websocket from broker")
+				logg.Info("sending hello to user")
+				if err == nil {
+					node.send <- b
+				}
 
-			b, err := wire.Encode(
-				node.Connectionid,
-				wire.CMD_SYSTEM_STAT,
-				wire.BroadcastUsers,
-				s,
-			)
-			if err == nil {
-				node.send <- b
-			} else {
-				logg.Warn("Encoding sysemstat cmd error")
 			}
 
 		case nconn := <-h.RemoveConnection:

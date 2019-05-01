@@ -17,7 +17,7 @@ func GetMainRouter(b *broker.Broker) *mux.Router {
 	registerUserAPI(r.PathPrefix("/api").Subrouter())
 	registerAuthHandlers(r.PathPrefix("/login").Subrouter())
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
-	r.HandleFunc("/websocket", b.ServeUserWebsocket)
+	r.HandleFunc("/websocket/{apikey}", b.ServeUserWebsocket)
 	r.HandleFunc("/", rootRoute)
 	r.Use(Logger)
 	return r

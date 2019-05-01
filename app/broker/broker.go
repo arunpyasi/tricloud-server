@@ -59,7 +59,6 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	hub := b.GetHub(agent.Owner)
 	node := NewNodeConn(key, AgentType, conn, hub)
-
 	hub.AddConnection <- node
 
 }
@@ -68,23 +67,36 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 	logg.Info("user websocket connn recived")
 
-	token := auth.ParseAPIKey(r.Header.Get("Api-key"))
-	claims, ok := token.Claims.(auth.MyClaims)
+	vars := mux.Vars(r)
+	apikey, ok := vars["apikey"]
 
+	if !ok {
+		logg.Warn("Not athorized 1")
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return
+	}
+	logg.Info(apikey)
+
+	token := auth.ParseAPIKey(apikey)
+	claims, ok := token.Claims.(*auth.MyClaims)
 	if !ok || !token.Valid {
+		logg.Warn("Not athorized 2")
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		logg.Warn("could not upgrade")
 		logg.Warn(err)
 		return
 	}
+	logg.Warn("upgraded")
 
 	hub := b.GetHub(claims.User)
 	node := NewNodeConn(claims.User, UserType, conn, hub)
 
+	logg.Warn("adding conn")
 	hub.AddConnection <- node
 
 }
