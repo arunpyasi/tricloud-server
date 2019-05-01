@@ -82,7 +82,7 @@ func (n *NodeConn) Writer() {
 			//n.conn.WriteControl(websocket.CloseGoingAway, []byte("goodbye"), time.Now())
 			return
 		case out := <-n.send:
-			err := n.conn.WriteMessage(websocket.TextMessage, out)
+			err := n.conn.WriteMessage(websocket.BinaryMessage, out)
 
 			if err != nil {
 				n.MyHub.RemoveConnection <- n
