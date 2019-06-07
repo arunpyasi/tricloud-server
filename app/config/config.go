@@ -7,11 +7,11 @@ type Config struct {
 	DBpath     string
 	StatDBpath string
 
-	// per user api key or something doogle calls it
+	// per user api tokenkey or something doogle calls it
 	FirebaseKeys map[string][]string
 
 	//app/project key to push notification
-	AppFirebaseKey string
+	AppFirebaseKeyFile string
 }
 
 func (c *Config) Update() {
@@ -27,6 +27,7 @@ func init() {
 		FirebaseKeys: map[string][]string{
 			"batman47": {"fegnEF0AXtY:APA91bG4f6R6S0I1vtAkf7ngd0z6Vo3aaUiMnCMpy7pmgDZF0aplQ41tt4F4ww0FRhK1BEkZFnEk1nEa79D0hFeGk5ydYldwjSX67P17a71sbCT9iwiJ5JLmXizEOz9xVGzA9i8Ux3M9"},
 		},
+		AppFirebaseKeyFile: "./tcloud-42ebf-firebase-adminsdk-ma9t8-d5a2581857.json",
 	}
 }
 

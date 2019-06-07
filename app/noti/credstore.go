@@ -10,10 +10,14 @@ type CredStore struct {
 	lmtx sync.RWMutex
 }
 
-func (c *CredStore) GetFirebaseAPIKey() string {
+func (c *CredStore) GetAPIFile() string {
 
 	conf := config.GetConfig()
-	return conf.AppFirebaseKey
+	return conf.AppFirebaseKeyFile
+}
+
+func (c *CredStore) GetAPI() string {
+	panic("Not IMPLEMENTED!!")
 }
 
 func (c *CredStore) Set(user string, authkey string) {

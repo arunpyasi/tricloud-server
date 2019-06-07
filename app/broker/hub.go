@@ -31,7 +31,7 @@ type Hub struct {
 	event *noti.EventManager
 }
 
-func NewHub(ctx context.Context, e *noti.EventManager ) *Hub {
+func NewHub(ctx context.Context, e *noti.EventManager) *Hub {
 
 	ctx1, ctxcancel := context.WithCancel(ctx)
 
@@ -49,7 +49,7 @@ func NewHub(ctx context.Context, e *noti.EventManager ) *Hub {
 		Ctx:              ctx1,
 		CtxCancel:        ctxcancel,
 		IDGenerator:      newGenerator(),
-		event:e,
+		event:            e,
 	}
 }
 
@@ -170,6 +170,10 @@ func (h *Hub) consumePacket(pak *packet) {
 	case wire.CMD_SYSTEM_STAT:
 		go func() {
 			statstore.StoreStat(pak.conn.Identifier, time.Now().UnixNano(), pak.body)
+			sd := wire.SysStatData{}
+
+			wire.Decode(pak.rawdata, &sd)
+			//h.event.
 		}()
 	}
 	h.broadcastUsers(pak)
