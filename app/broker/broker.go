@@ -3,6 +3,7 @@ package broker
 import (
 	"net/http"
 	"sync"
+	"context"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
 
@@ -10,19 +11,24 @@ import (
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
 	"github.com/indrenicloud/tricloud-server/app/logg"
+	"github.com/indrenicloud/tricloud-server/app/noti"
 )
 
 type Broker struct {
 	BLock sync.Mutex
 	Hubs  map[string]*Hub
+	event *noti.EventManager
 }
 
 func NewBroker() *Broker {
+	e := noti.NewEventManager()
 	return &Broker{
 		BLock: sync.Mutex{},
+		event:e,
 		Hubs:  make(map[string]*Hub),
 	}
 }
+
 
 func (b *Broker) GetHub(user string) *Hub {
 
@@ -33,7 +39,7 @@ func (b *Broker) GetHub(user string) *Hub {
 		return hub
 	}
 
-	hub = NewHub()
+	hub = NewHub(context.Background(), b.event)
 	b.Hubs[user] = hub
 	go hub.Run()
 

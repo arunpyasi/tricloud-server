@@ -7,6 +7,7 @@ import (
 	"github.com/indrenicloud/tricloud-agent/wire"
 	"github.com/indrenicloud/tricloud-server/app/database/statstore"
 	"github.com/indrenicloud/tricloud-server/app/logg"
+	"github.com/indrenicloud/tricloud-server/app/noti"
 )
 
 type Hub struct {
@@ -26,11 +27,13 @@ type Hub struct {
 	CtxCancel context.CancelFunc
 
 	IDGenerator *generator
+
+	event *noti.EventManager
 }
 
-func NewHub() *Hub {
+func NewHub(ctx context.Context, e *noti.EventManager ) *Hub {
 
-	ctx, ctxcancel := context.WithCancel(context.Background())
+	ctx1, ctxcancel := context.WithCancel(ctx)
 
 	return &Hub{
 		AllUserConns:  make(map[wire.UID]*NodeConn),
@@ -43,9 +46,10 @@ func NewHub() *Hub {
 		PacketChan:       make(chan *packet),
 		queryAgentsChan:  make(chan *agentsQuery),
 		removeagentChan:  make(chan string),
-		Ctx:              ctx,
+		Ctx:              ctx1,
 		CtxCancel:        ctxcancel,
 		IDGenerator:      newGenerator(),
+		event:e,
 	}
 }
 
