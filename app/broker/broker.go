@@ -1,9 +1,9 @@
 package broker
 
 import (
+	"context"
 	"net/http"
 	"sync"
-	"context"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
 
@@ -24,11 +24,10 @@ func NewBroker() *Broker {
 	e := noti.NewEventManager()
 	return &Broker{
 		BLock: sync.Mutex{},
-		event:e,
+		event: e,
 		Hubs:  make(map[string]*Hub),
 	}
 }
-
 
 func (b *Broker) GetHub(user string) *Hub {
 
@@ -39,7 +38,7 @@ func (b *Broker) GetHub(user string) *Hub {
 		return hub
 	}
 
-	hub = NewHub(context.Background(), b.event)
+	hub = NewHub(context.Background(), b.event, user)
 	b.Hubs[user] = hub
 	go hub.Run()
 

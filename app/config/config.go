@@ -25,9 +25,9 @@ func init() {
 		DBpath:     "mybolt.db",
 		StatDBpath: "sysstat.db",
 		FirebaseKeys: map[string][]string{
-			"batman47": {"fegnEF0AXtY:APA91bG4f6R6S0I1vtAkf7ngd0z6Vo3aaUiMnCMpy7pmgDZF0aplQ41tt4F4ww0FRhK1BEkZFnEk1nEa79D0hFeGk5ydYldwjSX67P17a71sbCT9iwiJ5JLmXizEOz9xVGzA9i8Ux3M9"},
+			"batman47": {"dTqHkMo922o:APA91bEh-FO0FzXmR05xp_txgLUja7KeFoHjFd26nzJwA9UVPpU5NhUDZS36ozSF-h3v1ft_pYqwFWBp6bm7mCcR0r3ZjcR_MN4e7MygCeEDG4R6TT8WW4rx5HBNT7KnheosqYH5JVdp"},
 		},
-		AppFirebaseKeyFile: "./tcloud-42ebf-firebase-adminsdk-ma9t8-d5a2581857.json",
+		AppFirebaseKeyFile: "./.meta/gcm/tcloud-42ebf-firebase-adminsdk-ma9t8-d5a2581857.json",
 	}
 }
 

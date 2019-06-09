@@ -29,11 +29,12 @@ func (e *EventManager) SendEvent(user string, data map[string]string) {
 			Data:  data,
 			Token: token,
 		}
-		e.eventProvider.PushNotification(context.Background(), &_message)
+		e.eventProvider.PushNotification(context.Background(), _message)
 	}
 
 }
 
 func (e *EventManager) SaveToken(user string, token string) {
+	e.cs.Set(user, token)
 
 }

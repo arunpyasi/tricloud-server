@@ -2,15 +2,17 @@ package broker
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
-	"github.com/indrenicloud/tricloud-server/app/database/statstore"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 	"github.com/indrenicloud/tricloud-server/app/noti"
 )
 
 type Hub struct {
+	userName string // hub is run per user basis
+
 	AllUserConns  map[wire.UID]*NodeConn // TODO lock if ..
 	AllAgentConns map[wire.UID]*NodeConn
 
@@ -28,28 +30,33 @@ type Hub struct {
 
 	IDGenerator *generator
 
-	event *noti.EventManager
+	event             *noti.EventManager
+	eventTimestampLog map[string]time.Time
+	lEvent            sync.Mutex
+	onetime           bool
 }
 
-func NewHub(ctx context.Context, e *noti.EventManager) *Hub {
+func NewHub(ctx context.Context, e *noti.EventManager, user string) *Hub {
 
 	ctx1, ctxcancel := context.WithCancel(ctx)
 
 	return &Hub{
+		userName:      user,
 		AllUserConns:  make(map[wire.UID]*NodeConn),
 		AllAgentConns: make(map[wire.UID]*NodeConn),
 
 		ListOfAgents: make(map[string]wire.UID),
 
-		AddConnection:    make(chan *NodeConn),
-		RemoveConnection: make(chan *NodeConn),
-		PacketChan:       make(chan *packet),
-		queryAgentsChan:  make(chan *agentsQuery),
-		removeagentChan:  make(chan string),
-		Ctx:              ctx1,
-		CtxCancel:        ctxcancel,
-		IDGenerator:      newGenerator(),
-		event:            e,
+		AddConnection:     make(chan *NodeConn),
+		RemoveConnection:  make(chan *NodeConn),
+		PacketChan:        make(chan *packet),
+		queryAgentsChan:   make(chan *agentsQuery),
+		removeagentChan:   make(chan string),
+		Ctx:               ctx1,
+		CtxCancel:         ctxcancel,
+		IDGenerator:       newGenerator(),
+		event:             e,
+		eventTimestampLog: make(map[string]time.Time),
 	}
 }
 
@@ -152,39 +159,37 @@ func (h *Hub) Run() {
 
 func (h *Hub) processPacket(p *packet) {
 
+	if p.head.CmdType == wire.CMD_GCM_TOKEN {
+		t := wire.TokenMessage{}
+		wire.Decode(p.rawdata, &t)
+		h.event.SaveToken(p.conn.Identifier, t.Token)
+		return
+	}
+
 	switch p.head.Flow {
 	case wire.UserToAgent:
 		h.handleUserPacket(p)
 	case wire.AgentToUser:
 		h.handleAgentPacket(p)
 	case wire.BroadcastUsers:
-		h.consumePacket(p)
+		if p.head.CmdType == wire.CMD_SYSTEM_STAT {
+			go h.consumePacket(p)
+		}
+		h.broadcastUsers(p)
 		return
 	default:
 		logg.Info("Not Implemented")
 	}
 }
 
-func (h *Hub) consumePacket(pak *packet) {
-	switch pak.head.CmdType {
-	case wire.CMD_SYSTEM_STAT:
-		go func() {
-			statstore.StoreStat(pak.conn.Identifier, time.Now().UnixNano(), pak.body)
-			sd := wire.SysStatData{}
-
-			wire.Decode(pak.rawdata, &sd)
-			//h.event.
-		}()
-	}
-	h.broadcastUsers(pak)
-
-}
-
 func (h *Hub) broadcastUsers(pak *packet) {
 
 	for _, conn := range h.AllUserConns {
 		pak.head.Connid = pak.conn.Connectionid
-		conn.send <- wire.UpdateHeader(pak.head, pak.rawdata)
+		select {
+		case conn.send <- wire.UpdateHeader(pak.head, pak.rawdata):
+		default:
+		}
 	}
 
 }

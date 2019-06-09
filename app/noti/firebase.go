@@ -52,6 +52,7 @@ func (f *Firebase) Init(confFile string) {
 
 // PushNotification pushes the notification
 func (f *Firebase) PushNotification(ctx context.Context, message interface{}) error {
+	fmt.Println("pushing NOTIFICATION HYPEE!!! 🤩")
 
 	_message, ok := message.(*messaging.Message)
 	if !ok {
@@ -63,7 +64,7 @@ func (f *Firebase) PushNotification(ctx context.Context, message interface{}) er
 		log.Fatalln(err)
 	}
 	// Response is a message ID string.
-	fmt.Println("Successfully sent message:", response)
+	fmt.Println("Successfully sent message 📟📠📟: ", response)
 
 	return nil
 
