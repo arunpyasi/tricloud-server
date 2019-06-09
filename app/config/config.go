@@ -37,7 +37,7 @@ func (c *Config) Update() {
 }
 
 func init() {
-	logg.Info("config init")
+	logg.Info("config init 🛠🛠")
 	data, err := ioutil.ReadFile(confFile)
 	if err != nil {
 		logg.Error("Could not read config:")

@@ -43,26 +43,26 @@ func (h *Hub) consumePacket(pak *packet) {
 
 	Events := make(map[string]string)
 
+	// mem usage
 	memper := ((sd.TotalMem - sd.AvailableMem) * 100) / (sd.TotalMem)
-
 	if memper > MemHightThreshold {
 		Events["memory"] = "high"
 		Events["mem_per"] = fmt.Sprintf("%d", memper)
-		logg.Info("Nearly out of memory")
+		logg.Info("Nearly out of memory ☠️☠️")
 
 	}
 
+	//cpu usage
 	cpuper := float64(0)
-
 	for _, i := range sd.CPUPercent {
 		cpuper = cpuper + i
 	}
 	cpuper = cpuper / float64(len(sd.CPUPercent))
-	//time.Microsecond
 
 	if cpuper > CPUHightThreshold {
 		Events["cpu"] = "high"
 		Events["cpu_per"] = fmt.Sprintf("%.6f", cpuper)
+		logg.Info("Nearly out of CPU ☠️☠️")
 	}
 
 	if len(Events) > 0 {
@@ -70,8 +70,8 @@ func (h *Hub) consumePacket(pak *packet) {
 		Events["agent"] = pak.conn.Identifier
 		Events["user"] = h.userName
 		Events["type"] = "resurce_spike"
-		fmt.Printf("%+v", h.eventTimestampLog)
 
+		logg.Info("📠📠 Sending Event 📠📠")
 		h.event.SendEvent(h.userName, Events)
 	}
 
