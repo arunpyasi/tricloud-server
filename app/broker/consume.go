@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
@@ -11,7 +12,7 @@ import (
 const (
 	MemHightThreshold = 20
 	CPUHightThreshold = 90
-	EventTimeout      = 30
+	EventTimeout      = 300 * time.Second
 )
 
 // this consumes packet that is, saves log to database
@@ -26,16 +27,16 @@ func (h *Hub) consumePacket(pak *packet) {
 	statstore.StoreStat(pak.conn.Identifier, t.UnixNano(), pak.body)
 
 	h.lEvent.Lock()
+	defer h.lEvent.Unlock()
 	oldt, ok := h.eventTimestampLog[pak.conn.Identifier]
+	fmt.Println(oldt)
 	if ok {
-		t2 := oldt.Add(time.Duration(EventTimeout) * time.Second)
-		if t2.Before(t) {
-			h.lEvent.Unlock()
+		fmt.Println("📠")
+		t2 := oldt.Add(EventTimeout)
+		if t.Before(t2) {
 			return
 		}
 	}
-	h.eventTimestampLog[pak.conn.Identifier] = t
-	h.lEvent.Unlock()
 
 	sd := wire.SysStatData{}
 	wire.Decode(pak.rawdata, &sd)
@@ -45,7 +46,8 @@ func (h *Hub) consumePacket(pak *packet) {
 	memper := ((sd.TotalMem - sd.AvailableMem) * 100) / (sd.TotalMem)
 
 	if memper > MemHightThreshold {
-		Events["Memory"] = "LOW"
+		Events["memory"] = "high"
+		Events["mem_per"] = fmt.Sprintf("%d", memper)
 		logg.Info("Nearly out of memory")
 
 	}
@@ -56,12 +58,19 @@ func (h *Hub) consumePacket(pak *packet) {
 		cpuper = cpuper + i
 	}
 	cpuper = cpuper / float64(len(sd.CPUPercent))
+	//time.Microsecond
 
 	if cpuper > CPUHightThreshold {
-		Events["CPU"] = "HIGH"
+		Events["cpu"] = "high"
+		Events["cpu_per"] = fmt.Sprintf("%.6f", cpuper)
 	}
 
 	if len(Events) > 0 {
+		h.eventTimestampLog[pak.conn.Identifier] = t
+		Events["agent"] = pak.conn.Identifier
+		Events["user"] = h.userName
+		Events["type"] = "resurce_spike"
+		fmt.Printf("%+v", h.eventTimestampLog)
 
 		h.event.SendEvent(h.userName, Events)
 	}

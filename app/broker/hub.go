@@ -25,6 +25,9 @@ type Hub struct {
 	queryAgentsChan chan *agentsQuery
 	removeagentChan chan string
 
+	// broadcast new agent info to all user conn or decrease
+	broadcastAgentsToUser chan struct{}
+
 	Ctx       context.Context
 	CtxCancel context.CancelFunc
 
@@ -47,16 +50,17 @@ func NewHub(ctx context.Context, e *noti.EventManager, user string) *Hub {
 
 		ListOfAgents: make(map[string]wire.UID),
 
-		AddConnection:     make(chan *NodeConn),
-		RemoveConnection:  make(chan *NodeConn),
-		PacketChan:        make(chan *packet),
-		queryAgentsChan:   make(chan *agentsQuery),
-		removeagentChan:   make(chan string),
-		Ctx:               ctx1,
-		CtxCancel:         ctxcancel,
-		IDGenerator:       newGenerator(),
-		event:             e,
-		eventTimestampLog: make(map[string]time.Time),
+		AddConnection:         make(chan *NodeConn),
+		RemoveConnection:      make(chan *NodeConn),
+		PacketChan:            make(chan *packet),
+		queryAgentsChan:       make(chan *agentsQuery),
+		removeagentChan:       make(chan string),
+		broadcastAgentsToUser: make(chan struct{}),
+		Ctx:                   ctx1,
+		CtxCancel:             ctxcancel,
+		IDGenerator:           newGenerator(),
+		event:                 e,
+		eventTimestampLog:     make(map[string]time.Time),
 	}
 }
 
@@ -151,10 +155,15 @@ func (h *Hub) Run() {
 				}()
 
 			}
-
+		case <-h.broadcastAgentsToUser:
+			h.broadcastAgentsInfo()
 		}
 	}
 	logg.Info("hub exitting")
+}
+
+func (h *Hub) broadcastAgentsInfo() {
+
 }
 
 func (h *Hub) processPacket(p *packet) {

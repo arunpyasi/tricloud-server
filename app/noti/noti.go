@@ -1,8 +1,14 @@
 package noti
 
+func notificationProviders(cs CredentialStore) []Provider {
 
-// NewNotificationProvider is a builder that builds new notification
-// using config
-func NewNotificationProvider(pName string) Provider {
-	return nil
+	var ps []Provider
+	if cs.GetAPIFile("firebase") != "" {
+		fb := NewFirebase(cs.GetAPIFile("firebase"))
+		ps = append(ps, fb)
+	}
+
+	ps = append(ps, &WebHooked{})
+
+	return ps
 }

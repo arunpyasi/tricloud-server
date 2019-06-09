@@ -1,1 +1,29 @@
-{}
+{
+  "Dev": true,
+  "DBpath": "mybolt.db",
+  "StatDBpath": "sysstat.db",
+  "EventProviders": {
+    "firebase": {
+      "Apikey": "",
+      "ConfigFile": "./.meta/data/tcloud-42ebf-firebase-adminsdk-ma9t8-d5a2581857.json",
+      "TokenPerUser": {
+        "batman47": [
+          "fTqHkMo922o:APA81bEi-FO0FzXmR15xp_txgLUjb7KeFoHjFd26nzJwA9UVPpU5NhUDZS36ozSF-h3v1ft_pYqwFWBp6bm7mCcR0r3ZjcR_4MNe7MygCeEDG4R6TT8WW4rx5NBHT7KnheosqYH5JVde"
+        ]
+      },
+      "Options": {
+        "verbose": "1"
+      }
+    },
+    "webhooked": {
+      "Apikey": "",
+      "ConfigFile": "",
+      "TokenPerUser": {
+        "batman47": [
+          "https://discordapp.com/api/webhooks/587186378482595328/TfkGRgZWLgEMY-0ck3BMvzb489AHCk94pBWWRDiIsE1XffQjhZLdWuD0gNdY15q8yQo9"
+        ]
+      },
+      "Options": {}
+    }
+  }
+}

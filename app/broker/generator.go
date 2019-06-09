@@ -27,13 +27,14 @@ func newGenerator() *generator {
 func (g *generator) generate() wire.UID {
 	g.l.Lock()
 	defer g.l.Unlock()
-	cuid := g.value
 
 	for { // TODO check infinite loop using a counter and panic maybe
+		cuid := g.value
 		_, ok := g.used[cuid]
 		g.value++
+
 		if !ok {
-			return g.value
+			return cuid
 		}
 	}
 

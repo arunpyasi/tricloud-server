@@ -7,25 +7,44 @@ import (
 )
 
 type CredStore struct {
-	lmtx sync.RWMutex
+	config *config.Config
+	lmtx   sync.RWMutex
 }
 
-func (c *CredStore) GetAPIFile() string {
-
-	conf := config.GetConfig()
-	return conf.AppFirebaseKeyFile
+func NewCredStore() *CredStore {
+	cs := new(CredStore)
+	cs.config = config.GetConfig()
+	return cs
 }
 
-func (c *CredStore) GetAPI() string {
-	panic("Not IMPLEMENTED!!")
+func (c *CredStore) GetAPIFile(provderType string) string {
+	c.lmtx.RLock()
+	defer c.lmtx.RUnlock()
+
+	pc, ok := c.config.EventProviders[provderType]
+	if ok {
+		return pc.ConfigFile
+	}
+	return ""
 }
 
-func (c *CredStore) Set(user string, authkey string) {
+func (c *CredStore) GetAPIKey(provderType string) string {
+	c.lmtx.RLock()
+	defer c.lmtx.RUnlock()
+
+	pc, ok := c.config.EventProviders[provderType]
+	if ok {
+		return pc.Apikey
+	}
+	return ""
+}
+
+func (c *CredStore) SetToken(provderType string, user string, authkey string) {
 	c.lmtx.Lock()
 	defer c.lmtx.Unlock()
 
-	conf := config.GetConfig()
-	keys, ok := conf.FirebaseKeys[user]
+	pc, ok := c.config.EventProviders[provderType]
+	keys, ok := pc.TokenPerUser[user]
 
 	if !ok {
 		keys = []string{authkey}
@@ -35,18 +54,44 @@ func (c *CredStore) Set(user string, authkey string) {
 		//keys = authkey
 	}
 
-	conf.FirebaseKeys[user] = keys
-	conf.Update()
+	pc.TokenPerUser[user] = keys
+	c.config.Update()
 }
 
-func (c *CredStore) Get(user string) []string {
+func (c *CredStore) GetToken(provderType string, user string) []string {
 	c.lmtx.RLock()
 	defer c.lmtx.RUnlock()
 
-	conf := config.GetConfig()
-	keys, ok := conf.FirebaseKeys[user]
+	pc, ok := c.config.EventProviders[provderType]
+	ks, ok := pc.TokenPerUser[user]
 	if ok {
-		return keys
+		return ks
 	}
 	return nil
+}
+
+func (c *CredStore) SetOption(provderType string, user string, option string) {
+	c.lmtx.Lock()
+	defer c.lmtx.Unlock()
+
+	pc, ok := c.config.EventProviders[provderType]
+	if ok {
+		pc.Options[user] = option
+		c.config.Update()
+	}
+}
+
+func (c *CredStore) GetOption(provderType string, user string) string {
+	c.lmtx.RLock()
+	defer c.lmtx.RUnlock()
+
+	pc, ok := c.config.EventProviders[provderType]
+	if ok {
+		ks, ok := pc.Options[user]
+		if ok {
+			return ks
+		}
+	}
+
+	return ""
 }

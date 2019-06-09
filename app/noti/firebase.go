@@ -2,7 +2,6 @@ package noti
 
 import (
 	"context"
-	"errors"
 	_ "errors"
 	"fmt"
 	"log"
@@ -25,15 +24,15 @@ type Firebase struct {
 }
 
 // NewFirebase is a constuctor
-func NewFirebase() *Firebase {
+func NewFirebase(confFile string) *Firebase {
 	f := new(Firebase)
+	f.firebaseConfigFile = confFile
 
 	return f
 }
 
 // Init should initilize
-func (f *Firebase) Init(confFile string) {
-	f.firebaseConfigFile = confFile
+func (f *Firebase) Init() {
 
 	f.opt = option.WithCredentialsFile(f.firebaseConfigFile)
 	ctx := context.Background()
@@ -50,15 +49,19 @@ func (f *Firebase) Init(confFile string) {
 	f.mClient = client
 }
 
+func (f *Firebase) GetName() string {
+	return "firebase"
+}
+
 // PushNotification pushes the notification
-func (f *Firebase) PushNotification(ctx context.Context, message interface{}) error {
+func (f *Firebase) PushNotification(ctx context.Context, _token string, data map[string]string) error {
 	fmt.Println("pushing NOTIFICATION HYPEE!!! 🤩")
 
-	_message, ok := message.(*messaging.Message)
-	if !ok {
-		fmt.Println("Invalid Message type")
-		return errors.New("Invalid type of message")
+	_message := &messaging.Message{
+		Data:  data,
+		Token: _token,
 	}
+
 	response, err := f.mClient.Send(ctx, _message)
 	if err != nil {
 		log.Fatalln(err)

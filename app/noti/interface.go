@@ -6,14 +6,17 @@ import (
 
 // Provider is a notification provider interface
 type Provider interface {
-	Init(string)
-	PushNotification(context.Context, interface{}) error
+	Init()
+	GetName() string
+	PushNotification(context.Context, string, map[string]string) error
 }
 
 // CredentialStore provides storage of keys
 type CredentialStore interface {
-	GetAPIFile() string
-	GetAPI() string
-	Set(string, string)
-	Get(string) []string
+	GetAPIFile(string) string
+	GetAPIKey(string) string
+	SetToken(string, string, string)
+	GetToken(string, string) []string
+	SetOption(string, string, string)
+	GetOption(string, string) string
 }
