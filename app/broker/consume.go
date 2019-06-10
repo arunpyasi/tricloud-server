@@ -29,9 +29,9 @@ func (h *Hub) consumePacket(pak *packet) {
 	h.lEvent.Lock()
 	defer h.lEvent.Unlock()
 	oldt, ok := h.eventTimestampLog[pak.conn.Identifier]
-	fmt.Println(oldt)
+	logg.Info(oldt)
 	if ok {
-		fmt.Println("📠")
+		logg.Info("📠")
 		t2 := oldt.Add(EventTimeout)
 		if t.Before(t2) {
 			return

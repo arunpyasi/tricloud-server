@@ -4,11 +4,11 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/indrenicloud/tricloud-server/app/auth"
 	"github.com/indrenicloud/tricloud-server/app/database"
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 var (
@@ -31,7 +31,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Print(logininfo)
+	logg.Info(logininfo)
 
 	user, err := database.GetUser(logininfo["userid"])
 

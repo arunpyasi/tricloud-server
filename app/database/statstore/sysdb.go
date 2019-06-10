@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"log"
 
 	"github.com/indrenicloud/tricloud-server/app/config"
 	"github.com/indrenicloud/tricloud-server/app/logg"
@@ -36,7 +35,7 @@ func StoreStat(agentname string, t int64, value []byte) {
 
 		bkt, err := tx.CreateBucketIfNotExists([]byte(agentname))
 		if err != nil {
-			log.Println("systemstatus bkt error")
+			logg.Info("systemstatus bkt error")
 			return err
 		}
 
@@ -45,7 +44,7 @@ func StoreStat(agentname string, t int64, value []byte) {
 
 		err = bkt.Put(b, value)
 		if err != nil {
-			log.Println("agent bucket err")
+			logg.Info("agent bucket err")
 			return err
 		}
 

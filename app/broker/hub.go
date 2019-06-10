@@ -65,6 +65,7 @@ func NewHub(ctx context.Context, e *noti.EventManager, user string) *Hub {
 }
 
 func (h *Hub) Run() {
+	go h.debugg()
 
 	for {
 		select {
@@ -101,6 +102,7 @@ func (h *Hub) Run() {
 					logg.Warn("Encoding sysemstat cmd error")
 				}
 				node.send <- b
+				h.signalToUpdade()
 
 			case UserType:
 				h.AllUserConns[node.Connectionid] = node
@@ -118,16 +120,19 @@ func (h *Hub) Run() {
 				}
 
 			}
+			h.signalToUpdade()
 
 		case nconn := <-h.RemoveConnection:
+			logg.Debug("Removing magic balls ⚽️🏀⚽️🏀 ")
 			if nconn.Type == AgentType {
 				delete(h.ListOfAgents, nconn.Identifier)
 				delete(h.AllAgentConns, nconn.Connectionid)
+				h.signalToUpdade()
 			} else if nconn.Type == UserType {
 				delete(h.AllUserConns, nconn.Connectionid)
 			}
-
 			nconn.close()
+
 		case receivedPacket := <-h.PacketChan:
 			logg.Info("packet received")
 
@@ -139,6 +144,8 @@ func (h *Hub) Run() {
 			}
 			q.responseChan <- activeagents
 		case agentid := <-h.removeagentChan:
+			// this is used when agent is deleted form ui
+			// it has to forcefully removed
 			agentconid, ok := h.ListOfAgents[agentid]
 			if !ok {
 				break
@@ -162,7 +169,33 @@ func (h *Hub) Run() {
 	logg.Info("hub exitting")
 }
 
+func (h *Hub) signalToUpdade() {
+	go func() {
+		h.broadcastAgentsToUser <- struct{}{}
+	}()
+}
+
 func (h *Hub) broadcastAgentsInfo() {
+	logg.Debug("Broadcasting👏 ")
+	ags := &wire.AgentsCountMsg{Agents: make(map[string]wire.UID)}
+	for s, id := range h.ListOfAgents {
+		ags.Agents[s] = id
+
+	}
+
+	byt, err := wire.Encode(wire.UID(0), wire.CMD_AGENTS_NO, wire.BroadcastUsers, ags)
+	if err != nil {
+		logg.Debug("Encoading Mistake 🧩🧩 ")
+		logg.Debug(err)
+		return
+	}
+	for _, conn := range h.AllUserConns {
+		logg.Debug("👏 ")
+		select {
+		case conn.send <- byt:
+		default:
+		}
+	}
 
 }
 

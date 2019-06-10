@@ -2,8 +2,9 @@ package noti
 
 import (
 	"context"
-	"fmt"
 	"sync"
+
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 type EventManager struct {
@@ -28,14 +29,14 @@ func (e *EventManager) SendEvent(user string, data map[string]string) {
 
 	for _, ee := range e.eventProviders {
 		tokens := e.cs.GetToken(ee.GetName(), user)
-		fmt.Println("Notification Loop")
-		fmt.Println(ee.GetName())
-		fmt.Println(tokens)
+		logg.Info("Notification Loop")
+		logg.Info(ee.GetName())
+		logg.Info(tokens)
 		for _, token := range tokens {
 			go func(_ee Provider, t string) {
 				wg.Add(1)
-				fmt.Println("Inside Loop 👽👽👽")
-				fmt.Println(_ee.GetName())
+				logg.Info("Inside Loop 👽👽👽")
+				logg.Info(_ee.GetName())
 				_ee.PushNotification(context.Background(), t, data)
 				wg.Done()
 			}(ee, token)

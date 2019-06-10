@@ -2,10 +2,16 @@ package broker
 
 import (
 	"context"
-	"log"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/indrenicloud/tricloud-agent/wire"
+	"github.com/indrenicloud/tricloud-server/app/logg"
+)
+
+const (
+	pongWait   = 30 * time.Second
+	pingPeriod = 10 * time.Second
 )
 
 // NodeConn is used to represent both userconnection and agent connection
@@ -21,6 +27,7 @@ type NodeConn struct {
 	Running      bool
 	conn         *websocket.Conn
 	send         chan []byte
+	lastOnline   time.Time
 }
 
 func NewNodeConn(identifier string, t NodeType, conn *websocket.Conn, h *Hub) *NodeConn {
@@ -44,10 +51,18 @@ func NewNodeConn(identifier string, t NodeType, conn *websocket.Conn, h *Hub) *N
 }
 
 func (n *NodeConn) Reader() {
+
+	n.lastOnline = time.Now()
+
+	n.conn.SetPongHandler(func(data string) error {
+		n.lastOnline = time.Now()
+		return nil
+	})
+
 	for {
 		_, data, err := n.conn.ReadMessage() // todo byte[:read]
 		if err != nil {
-			log.Println(err)
+			logg.Info(err)
 			n.MyHub.RemoveConnection <- n
 			// todo check the type of error then continue/return depending on it
 			return
@@ -75,6 +90,10 @@ func (n *NodeConn) Reader() {
 }
 
 func (n *NodeConn) Writer() {
+
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+
 	defer n.conn.Close()
 	for {
 		select {
@@ -88,6 +107,21 @@ func (n *NodeConn) Writer() {
 				n.MyHub.RemoveConnection <- n
 				return
 			}
+		case t := <-ticker.C:
+			logg.Debug("tick.")
+			if n.lastOnline.Add(pongWait).After(t) {
+				err := n.conn.WriteMessage(websocket.PingMessage, []byte("👍"))
+				logg.Debug("ping")
+				if err != nil {
+					n.MyHub.RemoveConnection <- n
+					return
+				}
+				continue
+			}
+			logg.Debug("Missed your appoitment bro")
+			n.MyHub.RemoveConnection <- n
+			return
+
 		}
 	}
 

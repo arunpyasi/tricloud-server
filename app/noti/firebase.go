@@ -3,9 +3,9 @@ package noti
 import (
 	"context"
 	_ "errors"
-	"fmt"
 	"log"
 
+	"github.com/indrenicloud/tricloud-server/app/logg"
 	"google.golang.org/api/option"
 
 	firebase "firebase.google.com/go"
@@ -38,7 +38,8 @@ func (f *Firebase) Init() {
 	ctx := context.Background()
 	app, err := firebase.NewApp(ctx, nil, f.opt)
 	if err != nil {
-		fmt.Println("error initializing app:", err)
+		logg.Info("error initializing app:")
+		logg.Info(err)
 	}
 	f.app = app
 
@@ -55,7 +56,7 @@ func (f *Firebase) GetName() string {
 
 // PushNotification pushes the notification
 func (f *Firebase) PushNotification(ctx context.Context, _token string, data map[string]string) error {
-	fmt.Println("pushing NOTIFICATION HYPEE!!! 🤩")
+	logg.Info("pushing NOTIFICATION HYPEE!!! 🤩")
 
 	_message := &messaging.Message{
 		Data:  data,
@@ -67,7 +68,8 @@ func (f *Firebase) PushNotification(ctx context.Context, _token string, data map
 		log.Fatalln(err)
 	}
 	// Response is a message ID string.
-	fmt.Println("Successfully sent message 📟📠📟: ", response)
+	logg.Info("Successfully sent message 📟📠📟: ")
+	logg.Info(response)
 
 	return nil
 

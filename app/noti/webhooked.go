@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
 type WebHooked struct {
@@ -22,7 +24,7 @@ func (w *WebHooked) PushNotification(ctx context.Context, token string, data map
 
 	outbyte, err := json.Marshal(outbody)
 	if err != nil {
-		fmt.Println("Encoding Error")
+		logg.Info("Encoding Error")
 		return err
 	}
 
@@ -32,15 +34,19 @@ func (w *WebHooked) PushNotification(ctx context.Context, token string, data map
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("WEBHOOKED ERROR", err)
+		logg.Info("WEBHOOKED ERROR")
+		logg.Info(err)
 		return err
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
+	logg.Info("response Status:")
+	logg.Info(resp.Status)
+	logg.Info("response Headers:")
+	logg.Info(resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	logg.Info("response Body:")
+	logg.Info(string(body))
 
 	return nil
 }
