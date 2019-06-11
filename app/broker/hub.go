@@ -90,7 +90,7 @@ func (h *Hub) Run() {
 				logg.Info("starting system staticstcs service")
 				s := &wire.SysStatCmd{
 					Interval: 5,
-					Timeout:  200,
+					Timeout:  0,
 				}
 				b, err := wire.Encode(
 					node.Connectionid,
