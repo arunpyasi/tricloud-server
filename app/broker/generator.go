@@ -25,8 +25,8 @@ func newGenerator() *generator {
 }
 
 func (g *generator) generate() wire.UID {
-	g.l.Lock()
-	defer g.l.Unlock()
+	//g.l.Lock()
+	//defer g.l.Unlock()
 
 	for { // TODO check infinite loop using a counter and panic maybe
 		cuid := g.value

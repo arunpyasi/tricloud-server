@@ -134,6 +134,7 @@ func (h *Hub) Run() {
 			} else if nconn.Type == UserType {
 				delete(h.AllUserConns, nconn.Connectionid)
 			}
+			h.IDGenerator.free(nconn.Connectionid)
 			nconn.close()
 
 		case receivedPacket := <-h.PacketChan:
