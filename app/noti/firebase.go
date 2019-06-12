@@ -55,8 +55,10 @@ func (f *Firebase) GetName() string {
 }
 
 // PushNotification pushes the notification
-func (f *Firebase) PushNotification(ctx context.Context, _token string, data map[string]string) error {
+func (f *Firebase) PushNotification(ctx context.Context, _token string, _data string) error {
 	logg.Info("pushing NOTIFICATION HYPEE!!! 🤩")
+
+	data := map[string]string{"message": _data}
 
 	_message := &messaging.Message{
 		Data:  data,
@@ -65,7 +67,8 @@ func (f *Firebase) PushNotification(ctx context.Context, _token string, data map
 
 	response, err := f.mClient.Send(ctx, _message)
 	if err != nil {
-		log.Fatalln(err)
+		logg.Debug("Firebase push failed 😕😕😕😕😕😕")
+		logg.Debug(err)
 	}
 	// Response is a message ID string.
 	logg.Info("Successfully sent message 📟📠📟: ")

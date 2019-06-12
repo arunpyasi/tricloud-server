@@ -8,7 +8,7 @@ import (
 type Provider interface {
 	Init()
 	GetName() string
-	PushNotification(context.Context, string, map[string]string) error
+	PushNotification(context.Context, string, string) error
 }
 
 // CredentialStore provides storage of keys

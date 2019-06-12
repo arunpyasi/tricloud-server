@@ -1,6 +1,6 @@
 package noti
 
-var disableNoti = true
+var disableNoti = false
 
 func notificationProviders(cs CredentialStore) []Provider {
 

@@ -2,8 +2,6 @@ package broker
 
 import (
 	"context"
-	"sync"
-	"time"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
 	"github.com/indrenicloud/tricloud-server/app/logg"
@@ -33,10 +31,9 @@ type Hub struct {
 
 	IDGenerator *generator
 
-	event             *noti.EventManager
-	eventTimestampLog map[string]time.Time
-	lEvent            sync.Mutex
-	onetime           bool
+	event *noti.EventManager
+
+	BroadCastEvent chan []byte
 }
 
 func NewHub(ctx context.Context, e *noti.EventManager, user string) *Hub {
@@ -56,11 +53,11 @@ func NewHub(ctx context.Context, e *noti.EventManager, user string) *Hub {
 		queryAgentsChan:       make(chan *agentsQuery),
 		removeagentChan:       make(chan string),
 		broadcastAgentsToUser: make(chan struct{}),
+		BroadCastEvent:        make(chan []byte),
 		Ctx:                   ctx1,
 		CtxCancel:             ctxcancel,
 		IDGenerator:           newGenerator(),
 		event:                 e,
-		eventTimestampLog:     make(map[string]time.Time),
 	}
 }
 
@@ -109,18 +106,24 @@ func (h *Hub) Run() {
 
 				go node.Reader()
 				go node.Writer()
+				ags := &wire.AgentsCountMsg{Agents: make(map[string]wire.UID)}
 
-				b, err := wire.Encode(node.Connectionid,
-					wire.CMD_SERVER_HELLO,
-					wire.DefaultFlow,
-					"hello websocket from broker")
-				logg.Info("sending hello to user")
+				for s, id := range h.ListOfAgents {
+					ags.Agents[s] = id
+				}
+				byt, err := wire.Encode(node.Connectionid, wire.CMD_AGENTS_NO, wire.BroadcastUsers, ags)
+
+				if err != nil {
+					logg.Debug("Encoading Mistake 🧩🧩 ")
+					logg.Debug(err)
+					return
+				}
+
 				if err == nil {
-					node.send <- b
+					node.send <- byt
 				}
 
 			}
-			h.signalToUpdade()
 
 		case nconn := <-h.RemoveConnection:
 			logg.Debug("Removing magic balls ⚽️🏀⚽️🏀 ")
@@ -164,7 +167,11 @@ func (h *Hub) Run() {
 			}
 		case <-h.broadcastAgentsToUser:
 			h.broadcastAgentsInfo()
+		case bt := <-h.BroadCastEvent:
+			logg.Debug("They are here alert everyone 👮‍👮‍‍👮‍‍👮‍‍👮‍")
+			h.broadcastEvent(bt)
 		}
+
 	}
 	logg.Info("hub exitting")
 }
@@ -226,10 +233,25 @@ func (h *Hub) processPacket(p *packet) {
 
 func (h *Hub) broadcastUsers(pak *packet) {
 
+	pak.head.Connid = pak.conn.Connectionid
+	updatedbytes := wire.UpdateHeader(pak.head, pak.rawdata)
+
 	for _, conn := range h.AllUserConns {
-		pak.head.Connid = pak.conn.Connectionid
+
 		select {
-		case conn.send <- wire.UpdateHeader(pak.head, pak.rawdata):
+		case conn.send <- updatedbytes:
+		default:
+		}
+	}
+
+}
+
+func (h *Hub) broadcastEvent(bt []byte) {
+
+	for _, conn := range h.AllUserConns {
+
+		select {
+		case conn.send <- bt:
 		default:
 		}
 	}

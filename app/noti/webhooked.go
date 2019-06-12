@@ -16,10 +16,10 @@ type WebHooked struct {
 
 func (w *WebHooked) Init()           {}
 func (w *WebHooked) GetName() string { return "webhooked" }
-func (w *WebHooked) PushNotification(ctx context.Context, token string, data map[string]string) error {
+func (w *WebHooked) PushNotification(ctx context.Context, token string, _data string) error {
 
 	var outbody = map[string]string{
-		"content": mapToStr(data),
+		"content": _data,
 	}
 
 	outbyte, err := json.Marshal(outbody)
