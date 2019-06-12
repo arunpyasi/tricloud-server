@@ -13,7 +13,7 @@ import (
 
 const (
 	MemHightThreshold = 20
-	CPUHightThreshold = 90
+	CPUHightThreshold = 50
 	EventTimeout      = 300 * time.Second
 )
 

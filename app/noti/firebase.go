@@ -58,11 +58,11 @@ func (f *Firebase) GetName() string {
 func (f *Firebase) PushNotification(ctx context.Context, _token string, _data string) error {
 	logg.Info("pushing NOTIFICATION HYPEE!!! 🤩")
 
-	data := map[string]string{"message": _data}
+	data := &messaging.Notification{Title: "TriCloud Notification", Body: _data}
 
 	_message := &messaging.Message{
-		Data:  data,
-		Token: _token,
+		Notification: data,
+		Token:        _token,
 	}
 
 	response, err := f.mClient.Send(ctx, _message)
