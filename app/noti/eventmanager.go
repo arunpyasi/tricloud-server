@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/indrenicloud/tricloud-agent/wire"
+	alertdb "github.com/indrenicloud/tricloud-server/app/database/statstore"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
@@ -136,33 +137,23 @@ AFTERCPUCHECK:
 	if len(events.Events) == 0 {
 		return
 	}
+	e.SendEvent(username, events, ch)
 
-	// TODO add other events
+}
 
-	//data := BadExpr
-	/*
-		b := new(bytes.Buffer)
-		fmt.Fprintf(b, "Events\n")
-		for _, value := range  events.Events {
-			fmt.Fprintf(b, "%s=\"%s\"\n", value.Type, value.Message)
-		}
-		fmt.Fprintf(b, "timestamp=%d\n",events.Timestamp )
-		b.String()
-	*/
-	eventsbyte, err := Encode(events)
+func (e *EventManager) SendEvent(user string, ec *EventContainer, ch chan<- []byte) {
+	eventsbyte, err := Encode(ec)
 	if err != nil {
 		return
 	}
-	func() {
+	go func() {
 		h := wire.NewHeader(wire.UID(0), wire.CMD_EVENTS, wire.BroadcastUsers)
 		ch <- wire.AttachHeader(h, eventsbyte)
 	}()
 
-	e.sendEvent(username, string(eventsbyte))
+	go alertdb.StoreAlert(eventsbyte, []byte(ec.Agentid), ec.Timestamp)
 
-}
-
-func (e *EventManager) SendEvent(user string, _data string) {
+	e.sendEvent(user, string(eventsbyte))
 
 }
 

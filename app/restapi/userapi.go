@@ -262,3 +262,22 @@ func GetAgentStatus(w http.ResponseWriter, r *http.Request) {
 
 	generateResp(w, statstore.GetStats(agent.ID, offset, noentries), nil)
 }
+
+func GetAgentAlerts(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	ID := vars["id"]
+
+	agent, err := database.GetAgent(ID)
+	if err != nil {
+		errorResp(w, err)
+		return
+	}
+
+	if !isAuthorized(agent.Owner, r) {
+		errorResp(w, ErrorNotAuthorized)
+		return
+	}
+	bytbyt, err := statstore.GetAlert([]byte(ID))
+
+	generateResp(w, bytbyt, err)
+}
