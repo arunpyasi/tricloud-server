@@ -36,8 +36,9 @@ func registerUserAPI(r *mux.Router) {
 	r.HandleFunc("/users/{id}", GetUser).Methods("GET")
 	r.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
 	r.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
+
 	r.HandleFunc("/user/api", GetApiKeys).Methods("GET")
-	r.HandleFunc("/user/api", AddApiKeys).Methods("PUT")
+	r.HandleFunc("/user/api", AddApiKeys).Methods("POST")
 	r.HandleFunc("/user/api/{key}", RemoveApiKeys).Methods("DELETE")
 
 	r.HandleFunc("/agents", GetAgents).Methods("GET")
