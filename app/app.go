@@ -19,7 +19,7 @@ func Run() {
 	go listenAgentsConnection(b)
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions, http.MethodPut},
 		AllowCredentials: true,
 		AllowedHeaders:   []string{"Api-key", "Content-Type", "Accept"},
 	})
