@@ -179,6 +179,16 @@ func UpdateUser(userinfo map[string]string) error {
 		user.Email = email
 	}
 
+	super, ok := userinfo["super"]
+	if ok {
+		if super == "true" {
+			user.SuperUser = true
+		} else if super == "false" {
+			user.SuperUser = false
+		}
+
+	}
+
 	userbyte, err := Encode(user)
 	if err != nil {
 		return err
