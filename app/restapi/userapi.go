@@ -75,11 +75,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	if !isAuthorized(id, r) {
 		errorResp(w, ErrorNotAuthorized)
+		return
 	}
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		errorResp(w, err)
+		return
 	}
 	defer r.Body.Close()
 
@@ -87,15 +89,22 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	err = deJson(body, &userinfo)
 	if err != nil {
 		errorResp(w, err)
+		return
 	}
 	userinfo["id"] = id
 
 	err = database.UpdateUser(userinfo)
 	if err != nil {
 		errorResp(w, err)
+		return
 	}
-	updatedusers, err := database.GetUser(id)
-	generateResp(w, updatedusers, err)
+	updateduser, err := database.GetUser(id)
+	if err != nil {
+		errorResp(w, err)
+		return
+	}
+	updateduser.Password = ""
+	generateResp(w, updateduser, nil)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +112,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	if !isSuperUser(r) {
 		errorResp(w, ErrorNotAuthorized)
+		return
 	}
 
 	vars := mux.Vars(r)
@@ -116,6 +126,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	updatedusers, err := database.GetAllUsers()
 	if err != nil {
 		errorResp(w, err)
+		return
 	}
 
 	generateResp(w, updatedusers, err)

@@ -157,38 +157,34 @@ func GetAllUsers() ([]*User, error) {
 }
 
 func UpdateUser(userinfo map[string]string) error {
-	fields := []string{"id", "password", "fullname", "email"}
+	//fields := []string{"id", "password", "fullname", "email"}
 
-	olduserbyte, err := DB.Read([]byte(userinfo["id"]), UserBucketName)
-	if err != nil {
-		return err
-	}
-
-	olduser := make(map[string]string)
-
-	err = Decode(olduserbyte, olduser)
+	user, err := GetUser(userinfo["id"])
 	if err != nil {
 		return err
 	}
 
 	pass, ok := userinfo["password"]
 	if ok {
-		userinfo["password"] = auth.GeneratePassword(pass)
+		user.Password = auth.GeneratePassword(pass)
 	}
 
-	for _, val := range fields {
-		_, ok := userinfo[val]
-		if ok {
-			olduser[val] = userinfo[val]
-		}
+	fullname, ok := userinfo["fullname"]
+	if ok {
+		user.FullName = fullname
 	}
 
-	userbyte, err := Encode(olduser)
+	email, ok := userinfo["email"]
+	if ok {
+		user.Email = email
+	}
+
+	userbyte, err := Encode(user)
 	if err != nil {
 		return err
 	}
 
-	return DB.Update([]byte(olduser["id"]), userbyte, UserBucketName)
+	return DB.Update([]byte(userinfo["id"]), userbyte, UserBucketName)
 }
 
 func DeleteUser(id string) error {
