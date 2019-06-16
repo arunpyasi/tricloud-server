@@ -289,6 +289,10 @@ func GetAgentAlerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bytbyt, err := statstore.GetAlert([]byte(ID))
+	outs := []string{}
+	for _, bt := range bytbyt {
+		outs = append(outs, string(bt))
+	}
 
-	generateResp(w, bytbyt, err)
+	generateResp(w, outs, err)
 }
