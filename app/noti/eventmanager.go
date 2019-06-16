@@ -151,7 +151,7 @@ func (e *EventManager) SendEvent(user string, ec *EventContainer, ch chan<- []by
 		ch <- wire.AttachHeader(h, eventsbyte)
 	}()
 
-	go alertdb.StoreAlert(eventsbyte, []byte(ec.Agentid), ec.Timestamp)
+	go alertdb.StoreAlert(eventsbyte, []byte(user), ec.Timestamp)
 
 	e.sendEvent(user, string(eventsbyte))
 

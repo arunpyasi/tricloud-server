@@ -2,13 +2,14 @@ package statstore
 
 import (
 	"encoding/binary"
+
 	"github.com/indrenicloud/tricloud-server/app/logg"
-		bolt "go.etcd.io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 var alertsBucket = []byte("alerts")
 
-func StoreAlert(alertbyte []byte, agentname []byte, timestamp int64)error{
+func StoreAlert(alertbyte []byte, username []byte, timestamp int64) error {
 	logg.Debug("storealert")
 
 	db.Update(func(tx *bolt.Tx) error {
@@ -18,14 +19,14 @@ func StoreAlert(alertbyte []byte, agentname []byte, timestamp int64)error{
 			logg.Info("systemstatus bkt error")
 			return err
 		}
-		b2, err := bkt.CreateBucketIfNotExists(agentname)
+		b2, err := bkt.CreateBucketIfNotExists(username)
 		if err != nil {
 			logg.Info("systemstatus bkt error")
 			return err
 		}
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, uint64(timestamp))
-		
+
 		err = b2.Put(b, alertbyte)
 		if err != nil {
 			logg.Info("agent bucket err")
@@ -38,7 +39,7 @@ func StoreAlert(alertbyte []byte, agentname []byte, timestamp int64)error{
 	return nil
 }
 
-func GetAlert(agentname []byte)([][]byte, error){
+func GetAlert(username []byte) ([][]byte, error) {
 	logg.Debug("getalert")
 	var outbytes [][]byte
 	err := db.View(func(tx *bolt.Tx) error {
@@ -49,8 +50,8 @@ func GetAlert(agentname []byte)([][]byte, error){
 			logg.Debug("bucket not created")
 			return ErrNotExists
 		}
-		
-		b2 := bkt.Bucket(agentname)
+
+		b2 := bkt.Bucket(username)
 
 		c := b2.Cursor()
 
@@ -59,7 +60,6 @@ func GetAlert(agentname []byte)([][]byte, error){
 		}
 		return nil
 	})
-	
-	
+
 	return outbytes, err
 }
