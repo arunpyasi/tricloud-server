@@ -27,6 +27,7 @@ type EventContainer struct {
 	Events  []Event
 
 	Timestamp int64
+	Timestr   string
 }
 
 type Event struct {
@@ -34,10 +35,11 @@ type Event struct {
 	Message string
 }
 
-func newEventContainer(agentid string, timestamp int64) *EventContainer {
+func newEventContainer(agentid string, timestamp int64, timestr string) *EventContainer {
 	return &EventContainer{
 		Agentid:   agentid,
 		Timestamp: timestamp,
+		Timestr:   timestr,
 	}
 }
 

@@ -51,7 +51,7 @@ func (e *EventManager) ProcessLog(agentName, username string,
 	sd := wire.SysStatData{}
 	wire.Decode(rawlog, &sd)
 
-	events := newEventContainer(agentName, t.UnixNano())
+	events := newEventContainer(agentName, t.UnixNano(), t.Format("Mon Jan _2 2006 15:04:05 "))
 
 	oldrecord, isthereOldRecord := e.eTimestamp[agentName]
 
