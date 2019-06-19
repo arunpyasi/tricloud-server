@@ -15,6 +15,7 @@ type User struct {
 	SuperUser bool     `json:"superuser,omitempty"`
 	APIKeys   []string `json:"apikey"`
 	Agents    []string `json:"agents"`
+	Websites  []string `json:"websites"`
 }
 
 var (
