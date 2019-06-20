@@ -50,12 +50,13 @@ func CreateWebsite(w http.ResponseWriter, r *http.Request) {
 func DeleteWebsite(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	url := vars["name"]
+	name := vars["name"]
 	logg.Warn("Deleting website url")
-	err := database.DeleteWebsite(url)
+	err := database.DeleteWebsite(name)
 	if err != nil {
 		errorResp(w, err)
 	}
+	go sMonitor.RemoveWebsite(name)
 
 	updatedwebsites, err := database.GetAllWebsites()
 	if err != nil {

@@ -33,6 +33,10 @@ func (m *Monitor) AddWebsite(ws *database.Website) {
 	m.cNewSite <- ws
 }
 
+func (m *Monitor) RemoveWebsite(name string) {
+	m.cRemoveSite <- name
+}
+
 func (m *Monitor) Run() {
 	sites, err := database.GetAllWebsites()
 	if err != nil {
