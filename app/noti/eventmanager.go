@@ -137,11 +137,11 @@ AFTERCPUCHECK:
 	if len(events.Events) == 0 {
 		return
 	}
-	e.SendEvent(username, events, ch)
+	e.sendEvent(username, events, ch)
 
 }
 
-func (e *EventManager) SendEvent(user string, ec *EventContainer, ch chan<- []byte) {
+func (e *EventManager) sendEvent(user string, ec *EventContainer, ch chan<- []byte) {
 	eventsbyte, err := Encode(ec)
 	if err != nil {
 		return
@@ -153,11 +153,11 @@ func (e *EventManager) SendEvent(user string, ec *EventContainer, ch chan<- []by
 
 	go alertdb.StoreAlert(eventsbyte, []byte(user), ec.Timestamp)
 
-	e.sendEvent(user, string(eventsbyte))
+	e.SendEvent(user, string(eventsbyte))
 
 }
 
-func (e *EventManager) sendEvent(user string, _data string) {
+func (e *EventManager) SendEvent(user string, _data string) {
 
 	var wg sync.WaitGroup
 

@@ -6,13 +6,17 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/indrenicloud/tricloud-server/app/broker"
 	"github.com/indrenicloud/tricloud-server/app/logg"
+	"github.com/indrenicloud/tricloud-server/app/monitor"
 )
 
 var cbroker *broker.Broker
+var sMonitor *monitor.Monitor
 
 // Main Router
 func GetMainRouter(b *broker.Broker) *mux.Router {
 	cbroker = b
+	sMonitor = monitor.NewMonitor(b.GetEventManager())
+	go sMonitor.Run()
 	r := mux.NewRouter()
 	registerUserAPI(r.PathPrefix("/api").Subrouter())
 	registerAuthHandlers(r.PathPrefix("/login").Subrouter())
@@ -48,8 +52,8 @@ func registerUserAPI(r *mux.Router) {
 
 	r.HandleFunc("/websites", GetWebsites).Methods("GET")
 	r.HandleFunc("/websites", CreateWebsite).Methods("POST")
-	r.HandleFunc("/websites/{url}", GetWebsite).Methods("GET")
-	r.HandleFunc("/websites/{url}", DeleteWebsite).Methods("DELETE")
+	r.HandleFunc("/websites/{name}", GetWebsite).Methods("GET")
+	r.HandleFunc("/websites/{name}", DeleteWebsite).Methods("DELETE")
 
 	r.Use(MiddlewareSession, MiddlewareJson)
 }

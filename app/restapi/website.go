@@ -41,6 +41,7 @@ func CreateWebsite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	database.CreateWebsite(website)
+	go sMonitor.AddWebsite(website)
 	updatedwesbsites, err := database.GetAllWebsites()
 	generateResp(w, updatedwesbsites, err)
 
@@ -49,7 +50,7 @@ func CreateWebsite(w http.ResponseWriter, r *http.Request) {
 func DeleteWebsite(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	url := vars["url"]
+	url := vars["name"]
 	logg.Warn("Deleting website url")
 	err := database.DeleteWebsite(url)
 	if err != nil {
@@ -69,8 +70,8 @@ func DeleteWebsite(w http.ResponseWriter, r *http.Request) {
 func GetWebsite(w http.ResponseWriter, r *http.Request) {
 	// only if user owns agent or superuser
 	vars := mux.Vars(r)
-	Url := vars["url"]
-	website, err := database.GetWebsite(Url)
+	name := vars["name"]
+	website, err := database.GetWebsite(name)
 
 	if err != nil {
 		errorResp(w, err)

@@ -54,7 +54,7 @@ func devMigration(firstrun bool) {
 	}
 
 	if firstrun {
-		initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
+		initilizeBuckets([][]byte{UserBucketName, AgentBucketName, WebsiteBucketName})
 		usr, err := NewUser(userinfo, true)
 		logg.Info("Creating a demo user")
 		logg.Info(userinfo)
@@ -91,7 +91,7 @@ func devMigration(firstrun bool) {
 
 // else just make sure essential buckets are created
 func normalMigration(firstrun bool) {
-	initilizeBuckets([][]byte{UserBucketName, AgentBucketName})
+	initilizeBuckets([][]byte{UserBucketName, AgentBucketName, WebsiteBucketName})
 }
 
 func initilizeBuckets(buckets [][]byte) {

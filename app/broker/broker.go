@@ -133,3 +133,7 @@ func (b *Broker) RemoveAgent(agentid, user string) {
 	}
 	logg.Info("LOCKOFF removing agent  done")
 }
+
+func (b *Broker) GetEventManager() *noti.EventManager {
+	return b.event
+}

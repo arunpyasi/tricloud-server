@@ -5,15 +5,17 @@ import (
 )
 
 type Website struct {
-	Url    string `json:"url"`
-	Name   string `json:"name"`
-	Active bool   `json:"active"`
+	Url        string `json:"url"`
+	Name       string `json:"name"`
+	Active     bool   `json:"active"`
+	Timestamp  int64  `json:timestamp`
+	Subscriber string `json:subscribers`
 }
 
 var WebsiteBucketName = []byte("websites")
 
 func NewWebsite(websiteInfo map[string]string, active bool) (*Website, error) {
-	fields := []string{"url", "name"}
+	fields := []string{"url", "name", "user"}
 
 	for _, field := range fields {
 		value, ok := websiteInfo[field]
@@ -21,10 +23,14 @@ func NewWebsite(websiteInfo map[string]string, active bool) (*Website, error) {
 			return nil, fmt.Errorf("field %s not found", value)
 		}
 	}
+
+	name := websiteInfo["user"] + "_" + websiteInfo["name"]
+
 	return &Website{
-		Url:    websiteInfo["url"],
-		Name:   websiteInfo["name"],
-		Active: active,
+		Url:        websiteInfo["url"],
+		Name:       name,
+		Subscriber: websiteInfo["user"],
+		Active:     active,
 	}, nil
 }
 
@@ -34,7 +40,20 @@ func CreateWebsite(website *Website) error {
 		return err
 	}
 
-	err = DB.Create([]byte(website.Url), websitebyte, WebsiteBucketName)
+	err = DB.Create([]byte(website.Name), websitebyte, WebsiteBucketName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateWebsite(website *Website) error {
+	websitebyte, err := Encode(website)
+	if err != nil {
+		return err
+	}
+
+	err = DB.Update([]byte(website.Name), websitebyte, WebsiteBucketName)
 	if err != nil {
 		return err
 	}
@@ -65,9 +84,9 @@ func GetAllWebsites() ([]*Website, error) {
 	return websites, nil
 }
 
-func GetWebsite(url string) (*Website, error) {
+func GetWebsite(name string) (*Website, error) {
 	website := &Website{}
-	websitebyte, err := DB.Read([]byte(url), WebsiteBucketName)
+	websitebyte, err := DB.Read([]byte(name), WebsiteBucketName)
 
 	if err != nil {
 		return nil, err
@@ -81,7 +100,7 @@ func GetWebsite(url string) (*Website, error) {
 	return website, nil
 }
 
-func DeleteWebsite(url string) error {
+func DeleteWebsite(name string) error {
 	// u, err := GetWebsite(url)
 	// if err != nil {
 	// 	return err
@@ -92,5 +111,5 @@ func DeleteWebsite(url string) error {
 	// 	return err
 	// }
 	// DB.Update([]byte(u.ID), userbyte, UserBucketName)
-	return DB.Delete([]byte(url), WebsiteBucketName)
+	return DB.Delete([]byte(name), WebsiteBucketName)
 }
