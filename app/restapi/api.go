@@ -54,6 +54,10 @@ func registerUserAPI(r *mux.Router) {
 	r.HandleFunc("/websites", CreateWebsite).Methods("POST")
 	r.HandleFunc("/websites/{name}", GetWebsite).Methods("GET")
 	r.HandleFunc("/websites/{name}", DeleteWebsite).Methods("DELETE")
+	r.HandleFunc("/scripts", GetScripts).Methods("GET")
+	r.HandleFunc("/scripts", CreateScript).Methods("POST")
+	r.HandleFunc("/scripts/{name}", GetScript).Methods("GET")
+	r.HandleFunc("/scripts/{name}", DeleteScript).Methods("DELETE")
 
 	r.Use(MiddlewareSession, MiddlewareJson)
 }
