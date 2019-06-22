@@ -1,13 +1,16 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Script struct {
-	Name         string   `json:"name"`
-	Code         string   `json:"code"`
-	Platform     string   `json:"platform"`
-	CronSchedule string   `json:"cronschedule"`
-	Agents       []string `json:"agents"`
+	Name     string `json:"name"`
+	Code     string `json:"code"`
+	Platform string `json:"platform"`
+	Type     string `json:"type"`
+	Agent    string `json:"agent"`
+	User     string `json:"user"`
 }
 
 var ScriptBucketName = []byte("scripts")
@@ -22,11 +25,20 @@ func NewScript(scriptInfo map[string]string, active bool) (*Script, error) {
 		}
 	}
 
+	/*
+		CronSchedule := scriptInfo["cronschedule"]
+
+		i, err := strconv.ParseInt(CronSchedule, 10, 64)
+		if err != nil {
+			i = 0
+		}
+	*/
+
 	return &Script{
-		Name:         scriptInfo["name"],
-		Code:         scriptInfo["code"],
-		Platform:     scriptInfo["platform"],
-		CronSchedule: scriptInfo["cronschedule"],
+		Name:     scriptInfo["name"],
+		Code:     scriptInfo["code"],
+		Platform: scriptInfo["platform"],
+		//CronSchedule: i,
 	}, nil
 }
 
