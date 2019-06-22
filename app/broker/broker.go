@@ -29,7 +29,7 @@ func NewBroker() *Broker {
 	}
 }
 
-func (b *Broker) GetHub(user string) *Hub {
+func (b *Broker) getHub(user string) *Hub {
 
 	b.BLock.Lock()
 	defer b.BLock.Unlock()
@@ -62,7 +62,7 @@ func (b *Broker) ServeAgentWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hub := b.GetHub(agent.Owner)
+	hub := b.getHub(agent.Owner)
 	node := NewNodeConn(key, AgentType, conn, hub)
 	hub.AddConnection <- node
 
@@ -98,7 +98,7 @@ func (b *Broker) ServeUserWebsocket(w http.ResponseWriter, r *http.Request) {
 	}
 	logg.Warn("upgraded")
 
-	hub := b.GetHub(claims.User)
+	hub := b.getHub(claims.User)
 	node := NewNodeConn(claims.User, UserType, conn, hub)
 
 	logg.Warn("adding conn")
@@ -136,4 +136,14 @@ func (b *Broker) RemoveAgent(agentid, user string) {
 
 func (b *Broker) GetEventManager() *noti.EventManager {
 	return b.event
+}
+
+func (b *Broker) GetHub(user string) *Hub {
+	b.BLock.Lock()
+	defer b.BLock.Unlock()
+	h, ok := b.Hubs[user]
+	if ok {
+		return h
+	}
+	return nil
 }
