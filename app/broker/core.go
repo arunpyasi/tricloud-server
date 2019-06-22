@@ -21,6 +21,12 @@ type packet struct {
 	rawdata []byte //all bytes including header bytes
 }
 
+type DirectPacket struct {
+	Name  string
+	Body  []byte
+	Ntype NodeType
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
