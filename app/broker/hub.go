@@ -115,8 +115,9 @@ func (h *Hub) Run() {
 			h.broadcastEvent(bt)
 
 		}
-		logg.Info("hub exitting")
+
 	}
+	logg.Info("hub exitting")
 }
 
 func (h *Hub) signalToUpdade() {

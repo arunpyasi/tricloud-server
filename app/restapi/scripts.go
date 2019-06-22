@@ -23,6 +23,8 @@ func GetScripts(w http.ResponseWriter, r *http.Request) {
 
 func CreateScript(w http.ResponseWriter, r *http.Request) {
 
+	user, _ := parseUser(r)
+
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		errorResp(w, err)
@@ -35,14 +37,18 @@ func CreateScript(w http.ResponseWriter, r *http.Request) {
 		errorResp(w, err)
 		return
 	}
-	script, err := database.NewScript(scriptinfo, false)
+	script, err := database.NewScript(user, scriptinfo, false)
 	if err != nil {
 		errorResp(w, err)
 		return
 	}
-	database.CreateScript(script)
-	updatedwesbsites, err := database.GetAllScripts()
-	generateResp(w, updatedwesbsites, err)
+	err = database.CreateScript(script)
+	if err == nil {
+		mScript.AddScript(script)
+	}
+
+	updatedscript, err := database.GetAllScripts()
+	generateResp(w, updatedscript, err)
 
 }
 
@@ -56,7 +62,10 @@ func DeleteScript(w http.ResponseWriter, r *http.Request) {
 		errorResp(w, err)
 	}
 
+	mScript.RemoveScript(name)
+
 	updatedscripts, err := database.GetAllScripts()
+
 	if err != nil {
 		errorResp(w, err)
 		return
@@ -78,4 +87,17 @@ func GetScript(w http.ResponseWriter, r *http.Request) {
 	}
 
 	generateResp(w, script, err)
+}
+func RunScript(w http.ResponseWriter, r *http.Request) {
+	logg.Debug("RUNNNNNNNNN")
+	vars := mux.Vars(r)
+	name := vars["name"]
+	script, err := database.GetScript(name)
+
+	if err != nil {
+		errorResp(w, err)
+		return
+	}
+	mScript.RunScript(script)
+
 }

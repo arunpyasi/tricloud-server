@@ -15,8 +15,8 @@ type Script struct {
 
 var ScriptBucketName = []byte("scripts")
 
-func NewScript(scriptInfo map[string]string, active bool) (*Script, error) {
-	fields := []string{"name", "code", "platform", "cronschedule"}
+func NewScript(user string, scriptInfo map[string]string, active bool) (*Script, error) {
+	fields := []string{"name", "code", "platform", "type", "agent"}
 
 	for _, field := range fields {
 		value, ok := scriptInfo[field]
@@ -25,20 +25,15 @@ func NewScript(scriptInfo map[string]string, active bool) (*Script, error) {
 		}
 	}
 
-	/*
-		CronSchedule := scriptInfo["cronschedule"]
-
-		i, err := strconv.ParseInt(CronSchedule, 10, 64)
-		if err != nil {
-			i = 0
-		}
-	*/
+	name := scriptInfo["name"] + "_" + user
 
 	return &Script{
-		Name:     scriptInfo["name"],
+		Name:     name,
 		Code:     scriptInfo["code"],
 		Platform: scriptInfo["platform"],
-		//CronSchedule: i,
+		Type:     scriptInfo["type"],
+		Agent:    scriptInfo["agent"],
+		User:     scriptInfo["user"],
 	}, nil
 }
 

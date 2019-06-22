@@ -75,19 +75,23 @@ func (h *Hub) removeConnection(_node *NodeConn) {
 }
 
 func (h *Hub) directSend(pak *DirectPacket) {
-
+	//logg.Debug("runnning ")
 	switch pak.Ntype {
 	case UserType:
 
 	case AgentType:
+		//logg.Debug("1")
+		logg.Debug(pak.Name)
 		id, ok := h.ListOfAgents[pak.Name]
 		if !ok {
 			return
 		}
+		//logg.Debug("2")
 		conn, ok := h.AllAgentConns[id]
 		if !ok {
 			return
 		}
+		logg.Debug("3")
 		conn.send <- pak.Body
 	}
 

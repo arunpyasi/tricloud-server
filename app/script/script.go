@@ -6,21 +6,11 @@ import (
 	"github.com/indrenicloud/tricloud-agent/wire"
 	"github.com/indrenicloud/tricloud-server/app/broker"
 	"github.com/indrenicloud/tricloud-server/app/database"
-	"github.com/indrenicloud/tricloud-server/app/logg"
 )
 
-/*
-type Script struct {
-	Name  string
-	Type  string
-	Code  string
-	User  string
-	Agent string
-}
-*/
 type ScriptManager struct {
 	cAddScript    chan *database.Script
-	cRemoveScript chan *database.Script
+	cRemoveScript chan string
 	cRunScript    chan *database.Script
 	//cUpdateScript chan *database.Script
 	scripts map[string]*database.Script
@@ -31,7 +21,7 @@ func New(b *broker.Broker) *ScriptManager {
 	return &ScriptManager{
 		broker:        b,
 		cAddScript:    make(chan *database.Script),
-		cRemoveScript: make(chan *database.Script),
+		cRemoveScript: make(chan string),
 		cRunScript:    make(chan *database.Script),
 		//cUpdateScript: make(chan *database.Script),
 		scripts: make(map[string]*database.Script),
@@ -46,13 +36,15 @@ func (s *ScriptManager) AddScript(sc *database.Script) {
 }
 
 func (s *ScriptManager) RunScript(sc *database.Script) {
+	//logg.Debug("___RUN")
 	go func() {
+
 		s.cRunScript <- sc
 	}()
 
 }
 
-func (s *ScriptManager) RemoveScript(sc *database.Script) {
+func (s *ScriptManager) RemoveScript(sc string) {
 	go func() {
 		s.cRemoveScript <- sc
 	}()
@@ -60,14 +52,14 @@ func (s *ScriptManager) RemoveScript(sc *database.Script) {
 }
 
 func (s *ScriptManager) Run() {
-	logg.Debug("lallala")
+	//logg.Debug("lallala")
 
 	addScript := func(sc *database.Script) {
 		s.scripts[sc.Name] = sc
 	}
 
-	removeScript := func(sc *database.Script) {
-		delete(s.scripts, sc.Name)
+	removeScript := func(scname string) {
+		delete(s.scripts, scname)
 	}
 
 	runScript := func(sc *database.Script) {

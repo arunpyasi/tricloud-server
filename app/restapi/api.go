@@ -7,17 +7,21 @@ import (
 	"github.com/indrenicloud/tricloud-server/app/broker"
 	"github.com/indrenicloud/tricloud-server/app/logg"
 	"github.com/indrenicloud/tricloud-server/app/monitor"
+	"github.com/indrenicloud/tricloud-server/app/script"
 )
 
 var cbroker *broker.Broker
 var sMonitor *monitor.Monitor
+var mScript *script.ScriptManager
 
 // Main Router
 func GetMainRouter(b *broker.Broker) *mux.Router {
 	cbroker = b
 	sMonitor = monitor.NewMonitor(b.GetEventManager())
+	mScript = script.New(b)
 	go sMonitor.Run()
 	r := mux.NewRouter()
+	go mScript.Run()
 	registerUserAPI(r.PathPrefix("/api").Subrouter())
 	registerAuthHandlers(r.PathPrefix("/login").Subrouter())
 	r.PathPrefix("/public/").Handler(http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))
@@ -57,7 +61,10 @@ func registerUserAPI(r *mux.Router) {
 	r.HandleFunc("/scripts", GetScripts).Methods("GET")
 	r.HandleFunc("/scripts", CreateScript).Methods("POST")
 	r.HandleFunc("/scripts/{name}", GetScript).Methods("GET")
+	r.HandleFunc("/scripts/{name}/run", RunScript).Methods("GET")
 	r.HandleFunc("/scripts/{name}", DeleteScript).Methods("DELETE")
+
+	//RunScript
 
 	r.Use(MiddlewareSession, MiddlewareJson)
 }
