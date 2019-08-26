@@ -17,7 +17,8 @@ Tricloud is a monitoring system over websocket which has three components. A age
 
 
 
-## Architecture
+## 
+Server and agents are written in [Golang](https://golang.com) and client is written in [React](https://reactjs.org/).
  Websocket message header between browser, broker and agents is fixed 4byte. It is used for multiplexing between differents clients as well as different type of messages and broker can multiplex message without actually decoding body. Message body is corrently encoded with JSON (except for downloading or uploading files which is just raw binary) but is planned change to more efficient binary encoding oneof(msgpack, protobuffer, flatbuffer). 
 ![Arch](./.meta/assets/l1.png)
 
