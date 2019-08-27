@@ -153,7 +153,7 @@ func (e *EventManager) sendEvent(user string, ec *EventContainer, ch chan<- []by
 
 	go alertdb.StoreAlert(eventsbyte, []byte(user), ec.Timestamp)
 
-	e.SendEvent(user, string(eventsbyte))
+	e.SendEvent(user, NewFormattedMessage("agentalert", ec))
 
 }
 
