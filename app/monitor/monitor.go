@@ -63,6 +63,7 @@ func (m *Monitor) Run() {
 			oldstate, ok := m.oldSiteStates[s.Name]
 			if !ok {
 				logg.Debug("Map empty :(")
+				//m.oldSiteStates[s.Name] = s
 				continue
 			}
 			s.Subscriber = oldstate.Subscriber
@@ -87,13 +88,7 @@ func (m *Monitor) Run() {
 }
 
 func (m *Monitor) emitAlert(site *database.Website) {
-
-	bytes, err := database.Encode(site)
-	if err != nil {
-		return
-	}
-	m.eventm.SendEvent(site.Subscriber, string(bytes))
-
+	m.eventm.SendEvent(site.Subscriber, noti.NewFormattedMessage("webalert", site))
 }
 
 func (m *Monitor) worker(name, url string, ctx context.Context) {
