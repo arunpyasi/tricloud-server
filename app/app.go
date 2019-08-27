@@ -23,10 +23,10 @@ func Run() {
 		AllowCredentials: true,
 		AllowedHeaders:   []string{"Api-key", "Content-Type", "Accept"},
 	})
-	logg.Warn(http.ListenAndServe(":8080", c.Handler(restapi.GetMainRouter(b))))
+	logg.Warn(http.ListenAndServe(":3080", c.Handler(restapi.GetMainRouter(b))))
 
 }
 
 func listenAgentsConnection(b *broker.Broker) {
-	logg.Warn(http.ListenAndServe(":8081", restapi.GetAgentRouter(b)))
+	logg.Warn(http.ListenAndServe(":3081", restapi.GetAgentRouter(b)))
 }
