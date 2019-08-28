@@ -75,7 +75,7 @@ func (h *Hub) removeConnection(_node *NodeConn) {
 }
 
 func (h *Hub) directSend(pak *DirectPacket) {
-	//logg.Debug("runnning ")
+	logg.Debug("runnning ")
 	switch pak.Ntype {
 	case UserType:
 

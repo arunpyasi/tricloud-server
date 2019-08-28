@@ -99,5 +99,5 @@ func RunScript(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mScript.RunScript(script)
-
+	generateResp(w, map[string]string{"ok": "ok"}, nil)
 }

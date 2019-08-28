@@ -134,7 +134,7 @@ func (n *NodeConn) close() {
 	if n.writerCtx.Err() == nil {
 		n.CloseWriter()
 	}
-
+	logg.Debug("Closing conn")
 	n.conn.Close()
 
 }
