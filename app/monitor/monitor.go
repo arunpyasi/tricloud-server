@@ -111,7 +111,7 @@ func (m *Monitor) worker(name, url string, ctx context.Context) {
 		m.cSiteState <- &site
 
 		time.Sleep(5 * time.Second)
-
+		//resp.Close = true
 		select {
 		case <-ctx.Done():
 			return
